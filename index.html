@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stride</title>
+<meta name="theme-color" content="#0B0F14">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stride">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="hdr"><div class="hdr-in">
+  <h1 id="hdr-title">Oggi</h1>
+  <div class="hdr-r">
+    <button class="hdr-icon" data-act="voce.open" aria-label="Dimmi cosa hai fatto">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <button class="hdr-icon" data-act="partner.open" aria-label="Messaggi rapidi">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-11.7 7.1L4 20l1-4A8 8 0 1 1 20 12z"/></svg>
+    </button>
+    <button class="coach-btn" data-act="coach.open" aria-label="Coach AI">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+      Coach AI
+    </button>
+  </div>
+</div></header>
+
+<main id="view" class="wrap"></main>
+
+<div id="timerbar" class="timerbar hide"></div>
+
+<nav class="tabbar" aria-label="Sezioni"><div class="tabbar-in">
+  <button data-act="nav" data-tab="oggi"></button>
+  <button data-act="nav" data-tab="cibo"></button>
+  <button data-act="nav" data-tab="palestra"></button>
+  <button data-act="nav" data-tab="grafici"></button>
+  <button data-act="nav" data-tab="altro"></button>
+</div></nav>
+
+<div id="coach" class="coach" aria-hidden="true"></div>
+
+<noscript><p style="padding:24px;color:#E8EEF4">Stride ha bisogno di JavaScript.</p></noscript>
+
+<script src="vendor/chart.umd.min.js"></script>
+<script src="foods.js"></script>
+<script src="js/foods-crea.js"></script>
+<script src="js/foods-usda2.js"></script>
+<script src="js/foods-extra.js"></script>
+<script src="js/portions.js"></script>
+<script src="js/salute.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/data.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/advice.js"></script>
+<script src="js/checkin.js"></script>
+<script src="js/reminders.js"></script>
+<script src="js/partner.js"></script>
+<script src="js/v-oggi.js"></script>
+<script src="js/v-cibo.js"></script>
+<script src="js/body-map.js"></script>
+<script src="js/ex-media.js"></script>
+<script src="js/v-palestra.js"></script>
+<script src="js/v-profilo.js"></script>
+<script src="js/v-grafici.js"></script>
+<script src="js/v-altro.js"></script>
+<script src="js/v-coach.js"></script>
+<script src="js/voce-parse.js"></script>
+<script src="js/v-voce.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
