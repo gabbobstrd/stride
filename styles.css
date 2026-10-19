@@ -397,6 +397,7 @@ body.hv .setrow.done .inp { color: #fff; }
 .hv-prev.none { display: grid; place-items: center; }
 button.hv-prev:active { background: #2C2C2E; }
 .hv-add { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; border-radius: 10px; background: #2C2C2E; color: #fff; font-weight: 600; font-size: 15px; margin-top: 8px; }
+.hv-addrow { display: flex; gap: 8px; } .hv-addrow .hv-add { flex: 1; } .hv-add.rm { color: #FF453A; }
 .hv-menu { display: flex; flex-direction: column; }
 .hv-mi { min-height: 52px; text-align: left; font-size: 17px; padding: 0 6px; border-bottom: 1px solid #1C1C1E; color: #fff; }
 .hv-mi:last-child { border-bottom: 0; }

@@ -263,7 +263,8 @@
       const prevSet = st.t === 'w' || !lp ? null : lp.sets[Math.min(Math.max(nn - 1, 0), lp.sets.length - 1)];
       return setRowHtml(ei, si, st, e.plan, lp, lab, prevSet, rpeOn);
     }).join('');
-    h += '<button class="hv-add" data-act="pal.addSet" data-ei="' + ei + '">＋ Aggiungi serie</button>';
+    h += '<div class="hv-addrow">' + (e.sets.length > 1 ? '<button class="hv-add rm" data-act="pal.rmSet" data-ei="' + ei + '">− Togli serie</button>' : '') +
+      '<button class="hv-add" data-act="pal.addSet" data-ei="' + ei + '">＋ Aggiungi serie</button></div>';
     return '<section class="hv-ex">' + h + '</section>';
   }
   function sessionHtml(a) {
@@ -402,7 +403,7 @@
       const a = b.dataset.pa; readName();
       if (a === 'xdel') { draft.ex.splice(+b.dataset.xi, 1); draw(); }
       else if (a === 'xup') { const i = +b.dataset.xi; if (i > 0) { [draft.ex[i - 1], draft.ex[i]] = [draft.ex[i], draft.ex[i - 1]]; draw(); } }
-      else if (a === 'xadd') pickExercise(ex => { draft.ex.push({ e: ex.id, sets: 3, rmin: 8, rmax: 12, rest: 90 }); draw(); });
+      else if (a === 'xadd') pickExercise(ex => { draft.ex.push({ e: ex.id, sets: 1, rmin: 8, rmax: 12, rest: 90 }); draw(); });
       else if (a === 'save') {
         if (!draft.n.trim()) return UI.toast('Dai un nome alla routine');
         if (!draft.ex.length) return UI.toast('Aggiungi almeno un esercizio');
@@ -536,7 +537,7 @@
     if (Calc.doneSets(e).length && !await UI.confirm({ title: 'Togliere l\'esercizio?', msg: 'Le serie già fatte andranno perse.', ok: 'Togli', danger: true })) return;
     S().activeSession.ex.splice(+el.dataset.ei, 1); Store.change(); UI.refresh();
   });
-  UI.on('pal.addEx', () => { readRows(); pickExercise(ex => { S().activeSession.ex.push(mkEx(ex.id)); Store.change(); UI.refresh(); }); });
+  UI.on('pal.addEx', () => { readRows(); pickExercise(ex => { S().activeSession.ex.push(mkEx(ex.id, { sets: 1, rmin: 8, rmax: 12, rest: 90 })); Store.change(); UI.refresh(); }); });
   UI.on('pal.help', el => {
     const e = S().activeSession.ex[+el.dataset.ei];
     let si = e.sets.findIndex(s => !s.done); if (si < 0) si = e.sets.length - 1;
