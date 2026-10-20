@@ -506,6 +506,14 @@ button.hv-prev:active { background: #2C2C2E; }
 .ex-media.fb, .ex-media.fail { background: #1C1C1E; border-radius: 14px; margin: 0 0 12px; }
 .ex-media.fail img { display: none; }
 .ex-media.fail .ex-fb { display: block; }
+.ex-media.art { background: #1C1C1E; border-radius: 14px; margin: 0 0 12px; }
+.ex-media.art img { inset: 12px; width: calc(100% - 24px); height: calc(100% - 24px); }
+.ex-media .ex-bm { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,.55); border-radius: 10px; padding: 5px 6px; }
+.ex-media.fail .ex-bm { display: none; }
+.hv-ci.art { background: #2C2C2E; }
+.hv-ci.art img { object-fit: contain; padding: 3px; box-sizing: border-box; }
+.hv-ci.art b { color: #fff; }
+.hv-ci.art img + b { visibility: hidden; }
 .hv-exinfo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .hv-exinfo .bm { gap: 4px; }
 .hv-steps { padding-left: 20px; color: #8E8E93; font-size: 15px; line-height: 1.5; }

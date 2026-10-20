@@ -92,14 +92,15 @@ var BODY_PATHS = {
       g + '<path d="' + BODY_PATHS.outline[side] + '" fill="none" stroke="' + LINE + '" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>';
   }
 
-  /* opts: front, back (bool, default true), values {gruppo: serie}, primary [gruppi], secondary [gruppi], size (larghezza di una figura in px) */
+  /* opts: front, back (bool, default true), values {gruppo: serie}, primary [gruppi], secondary [gruppi], size (larghezza di una figura in px), color (accento, default blu) */
   function svg(opts) {
     opts = opts || {};
     var w = opts.size || 100;
     var fill;
     if (opts.primary || opts.secondary) {
       var P = opts.primary || [], S = opts.secondary || [];
-      fill = function (mg) { return P.indexOf(mg) >= 0 ? ACC : S.indexOf(mg) >= 0 ? 'rgba(59,130,246,.38)' : GREY; };
+      var C = opts.color || ACC, C2 = opts.color ? opts.color + '61' : 'rgba(59,130,246,.38)';
+      fill = function (mg) { return P.indexOf(mg) >= 0 ? C : S.indexOf(mg) >= 0 ? C2 : GREY; };
     } else {
       var v = opts.values || {}, mx = 0;
       Object.keys(v).forEach(function (k) { if (v[k] > mx) mx = v[k]; });

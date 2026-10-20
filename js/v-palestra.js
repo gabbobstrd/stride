@@ -40,25 +40,30 @@
     const s = (w[0] ? w[0][0] : '?') + (w[1] ? w[1][0] : (w[0] && w[0][1]) || '');
     return s.toUpperCase();
   }
-  /* foto dell'esercizio (js/ex-media.js, se c'e'): ritorna l'URL del fotogramma 0 o 1, altrimenti ''. */
+  /* disegno dell'esercizio (js/ex-art.js, Workout Guide CC BY-SA 4.0): fotogramma 0 -> frame-1, 1 -> frame-3.
+     Se manca, la foto di js/ex-media.js; altrimenti ''. */
+  const artOf = eid => { try { return (typeof EX_ART !== 'undefined' && EX_ART && EX_ART[eid]) || ''; } catch (e) { return ''; } };
   function mediaUrl(eid, n) {
+    const a = artOf(eid);
+    if (a) return EX_ART_BASE + a + '/frame-' + (n ? 3 : 1) + '.svg';
     try { if (typeof EX_MEDIA !== 'undefined' && EX_MEDIA && EX_MEDIA[eid]) return (typeof EX_MEDIA_BASE !== 'undefined' ? EX_MEDIA_BASE : '') + EX_MEDIA[eid] + '/' + n + '.jpg'; } catch (e) { /* ignora */ }
     return '';
   }
   const circle = eid => {
     const u = mediaUrl(eid, 0), ini = esc(initials(Calc.exName(eid)));
-    return u ? '<span class="hv-ci img"><img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()"><b>' + ini + '</b></span>' : '<span class="hv-ci">' + ini + '</span>';
+    return u ? '<span class="hv-ci img' + (artOf(eid) ? ' art' : '') + '"><img src="' + esc(u) + '" alt="" loading="lazy" onerror="this.remove()"><b>' + ini + '</b></span>' : '<span class="hv-ci">' + ini + '</span>';
   };
-  /* riquadro media: foto che alternano ogni 800 ms; se mancano, la figura del corpo */
-  function bodyFor(eid, size) {
+  /* riquadro media: disegni (o foto) che alternano ogni 800 ms; se mancano, la figura del corpo */
+  function bodyFor(eid, size, color) {
     const ex = Calc.exById(eid) || {};
-    return window.BodyMap ? BodyMap.svg({ primary: ex.mg ? [ex.mg] : [], secondary: ex.sec || [], size: size || 70 }) : '';
+    return window.BodyMap ? BodyMap.svg({ primary: ex.mg ? [ex.mg] : [], secondary: ex.sec || [], size: size || 70, color: color }) : '';
   }
   function mediaHtml(eid) {
-    const a = mediaUrl(eid, 0), b = mediaUrl(eid, 1);
+    const a = mediaUrl(eid, 0), b = mediaUrl(eid, 1), art = !!artOf(eid);
     if (!a) return '<div class="ex-media fb" data-eid="' + esc(eid) + '">' + bodyFor(eid, 90) + '</div>';
-    return '<div class="ex-media" data-eid="' + esc(eid) + '"><img class="m0 on" src="' + esc(a) + '" alt="" loading="lazy" onerror="this.parentNode.className+=&quot; fail&quot;">' +
-      '<img class="m1" src="' + esc(b) + '" alt="" loading="lazy" onerror="this.remove()"><div class="ex-fb">' + bodyFor(eid, 90) + '</div></div>';
+    return '<div class="ex-media' + (art ? ' art' : '') + '" data-eid="' + esc(eid) + '"><img class="m0 on" src="' + esc(a) + '" alt="" loading="lazy" onerror="this.parentNode.className+=&quot; fail&quot;">' +
+      '<img class="m1" src="' + esc(b) + '" alt="" loading="lazy" onerror="this.remove()">' +
+      (art ? '<div class="ex-bm">' + bodyFor(eid, 36, '#FF453A') + '</div>' : '') + '<div class="ex-fb">' + bodyFor(eid, 90) + '</div></div>';
   }
   /* un solo timer globale: scorre solo i riquadri ancora nel DOM, quindi si ferma da solo quando escono */
   setInterval(() => {

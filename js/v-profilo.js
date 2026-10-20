@@ -368,7 +368,7 @@
     const sh = UI.sheet({ title: e.n, cls: 'tall' });
     let tab = 'sum', metric = 'maxW';
     const CH = [['maxW', 'Peso massimo'], ['e1', 'Singola ripetizione massima']];
-    const hasPhoto = () => P.mediaHtml(id).indexOf('<img') >= 0;
+    const hasPhoto = () => { const m = P.mediaHtml(id); return m.indexOf('<img') >= 0 && m.indexOf('ex-media art') < 0; }; /* col disegno i muscoli sono già nel riquadro */
     function drawChartBox() {
       const box = sh.body.querySelector('#ed-chart'); if (!box) return;
       if (!per.length) { if (box._ch) { box._ch.destroy(); box._ch = null; } box.innerHTML = '<div class="hv-nodata">' + ic('bars', 56) + '<span>Non ci sono ancora dati</span></div>'; return; }

@@ -9,7 +9,7 @@
     ['Dati', [['profilo', 'Profilo e obiettivi', 'Calcolo di kcal e macro'], ['prefs', 'Preferenze cibo', 'Preferiti, non mi piace, da evitare'], ['corpo', 'Corpo e misure', 'Peso, vita, fianchi…'], ['benessere', 'Benessere', 'Sonno, energia, pressione']]],
     ['Salute', [['integratori', 'Integratori', 'Elenco, spunte e schede informative'], ['referti', 'Referti', 'Esami del sangue e allegati']]],
     ['Strumenti', [['coach', 'Coach AI', 'Chiedi a un nutrizionista sportivo'], ['partner', 'Partner', 'Messaggi rapidi su WhatsApp'], ['salute', 'Collega Salute (bilancia, passi, sonno)', 'Comando rapido iPhone']]],
-    ['Impostazioni', [['notifiche', 'Notifiche', 'Promemoria nel Calendario'], ['backup', 'Backup', 'Esporta e importa i dati'], ['ai', 'Impostazioni AI', 'Chiave Gemini'], ['info', 'Info e fonti', 'Come funziona, fonti scientifiche']]]
+    ['Impostazioni', [['notifiche', 'Notifiche', 'Promemoria nel Calendario'], ['backup', 'Backup', 'Esporta e importa i dati'], ['ai', 'Impostazioni AI', 'Chiave Gemini'], ['info', 'Info e fonti', 'Come funziona, fonti scientifiche'], ['crediti', 'Crediti', 'Disegni, foto, font e codice di terzi']]]
   ];
   const TITLES = {}; MENU.forEach(g => g[1].forEach(i => { TITLES[i[0]] = i[1]; }));
   TITLES.notifiche = 'Impostazioni · Notifiche';
@@ -478,6 +478,20 @@
     } catch (e) { UI.toast('Chiave non valida: ' + e.message); }
   });
 
+  /* =============== CREDITI =============== */
+  function creditiPage() {
+    const a = (u, t) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + '</a>';
+    const cr = [
+      ['Disegni degli esercizi', 'Workout Guide di Bryl Lim (' + a('https://github.com/bryllim/workout-guide', 'github.com/bryllim/workout-guide') + '), pose da Everkinetic (' + a('https://github.com/everkinetic/data', 'everkinetic/data') + '). Licenza ' + a('https://creativecommons.org/licenses/by-sa/4.0/', 'CC BY-SA 4.0') + '. Disegni usati senza modifiche; i muscoli in rosso sono una figura separata di Stride.'],
+      ['Foto degli esercizi', 'free-exercise-db (' + a('https://github.com/yuhonas/free-exercise-db', 'github.com/yuhonas/free-exercise-db') + '), Unlicense / pubblico dominio. Usate solo dove manca un disegno.'],
+      ['Figura del corpo', 'Tracciati da react-native-body-highlighter (' + a('https://github.com/HichamELBSI/react-native-body-highlighter', 'HichamELBSI/react-native-body-highlighter') + '), licenza MIT.'],
+      ['Font', 'Manrope, © 2019 The Manrope Project Authors, ' + a('https://openfontlicense.org', 'SIL Open Font License 1.1') + ' (testo in fonts/OFL.txt).'],
+      ['Alimenti', 'CREA Alimenti e Nutrizione (Tabelle 2019), USDA FoodData Central (pubblico dominio), Open Food Facts (ODbL). Dettagli in Info e fonti.']
+    ];
+    return '<div class="card">' + cr.map(c => '<div class="mb8"><b class="small">' + esc(c[0]) + '</b><div class="small mut">' + c[1] + '</div></div>').join('') + '</div>' +
+      '<p class="xs mut center mt12">Grazie a chi pubblica il proprio lavoro con licenze libere.</p>';
+  }
+
   /* =============== INFO E FONTI =============== */
   function infoPage() {
     const src = [
@@ -519,7 +533,7 @@
     prefs: prefsPage, corpo: corpoPage, benessere: benessPage, integratori: integratoriPage, referti: refertiPage,
     partner() { return Partner.settingsHtml(); },
     notifiche() { return Rem.page(); },
-    salute: salutePage, passi: salutePage, backup: backupPage, ai: aiPage, info: infoPage
+    salute: salutePage, passi: salutePage, backup: backupPage, ai: aiPage, info: infoPage, crediti: creditiPage
   };
 
   A.profileForm = profileForm; A.profileResult = profileResult;
