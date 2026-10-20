@@ -23,7 +23,7 @@
     return {
       v: 1,
       profile: null,
-      prefs: { fav: [], dislike: [], avoid: [], proteins: [], notes: '' },
+      prefs: { fav: [], dislike: [], avoid: [], proteins: [], notes: '', allergens: [] },
       customFoods: [],
       meals: [],
       diary: {},
@@ -44,6 +44,7 @@
       reminders: [],
       checkins: [],
       shopping: { date: '', days: 3, items: [], checked: {} },
+      weekPlan: null,
       meta: { lastBackup: 0, firstUse: today(), recents: [], lastQty: {}, demo: false }
     };
   }

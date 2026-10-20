@@ -46,6 +46,7 @@
       }
       h += UI.card('Strumenti',
         '<div class="grid2">' +
+        '<button class="btn" data-act="piano.open">Piano settimanale</button>' +
         '<button class="btn" data-act="cibo.meals">Pasti salvati</button>' +
         '<button class="btn" data-act="cibo.propose">Proponi giornata</button>' +
         '<button class="btn" data-act="cibo.scan">' + UI.icon('scan', 18) + ' Codice barre</button>' +
@@ -390,7 +391,7 @@
         '<div class="sec-t" style="margin-top:4px">Aggiungi in</div>' + '<div class="mb8">' + mealSelect('ms-to', target) + '</div>' +
         (S().meals.length ? '<div class="list">' + S().meals.map(m => {
           let kc = 0; m.items.forEach(i => { const f = Calc.food(i.f); const k = f ? Calc.scaled(f, i.g, 'kcal') : null; if (k) kc += k; });
-          return '<div class="li"><div class="li-main"><div class="li-t">' + esc(m.n) + '</div><div class="li-s">' + m.items.length + ' alimenti · ' + fmt(kc) + ' kcal</div></div><button class="btn sm primary" data-ms="use" data-id="' + esc(m.id) + '">Aggiungi</button><button class="icon-btn sm" data-ms="del" data-id="' + esc(m.id) + '" aria-label="Elimina">' + UI.icon('trash', 18) + '</button></div>';
+          return '<div class="li"><div class="li-main"><div class="li-t">' + esc(m.n) + '</div><div class="li-s">' + m.items.length + ' alimenti · ' + fmt(kc) + ' kcal</div>' + (m.steps && m.steps.length ? '<ol class="xs mut" style="margin:4px 0 0;padding-left:18px">' + m.steps.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>' : '') + '</div><button class="btn sm primary" data-ms="use" data-id="' + esc(m.id) + '">Aggiungi</button><button class="icon-btn sm" data-ms="del" data-id="' + esc(m.id) + '" aria-label="Elimina">' + UI.icon('trash', 18) + '</button></div>';
         }).join('') + '</div>' : UI.empty('Nessun pasto salvato.')));
       void day;
     }
@@ -669,14 +670,35 @@
 
   /* ---------- lista della spesa ---------- */
   function r10(g) { return g >= 1000 ? Math.round(g / 50) * 50 : g >= 100 ? Math.round(g / 10) * 10 : Math.max(5, Math.round(g / 5) * 5); }
+  /* alimento cotto -> stesso alimento crudo/secco (chiave = nome senza parole di cottura/crudo), per la spesa */
+  const COOKED_RE = /cott|lessat|bollit|arrost|grigliat/, RAWW_RE = /crud|secc/;
+  const STRIPW_RE = /\b(cott[aeio]|bollit[aeio]|lessat[aeio]|arrost[aeio]|grigliat[aeio]|crud[aeio]|secc(?:o|a|hi|he))\b/g;
+  const rawKey = nn => nn.replace(STRIPW_RE, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+  function rawIndex() {
+    const m = {};
+    Calc.allFoods().forEach(f => {
+      const nn = Calc.norm(f.n); if (!RAWW_RE.test(nn) || COOKED_RE.test(nn) || Calc.foodVal(f, 'kcal') === null) return;
+      const k = rawKey(nn); if (!m[k] || (/crud/.test(nn) && !/crud/.test(Calc.norm(m[k].n)))) m[k] = f;
+    });
+    return m;
+  }
+  function rawOf(f, idx) {
+    const nn = Calc.norm(f.n); if (!COOKED_RE.test(nn) || RAWW_RE.test(nn) || !(Calc.foodVal(f, 'kcal') > 0)) return null;
+    const r = idx[rawKey(nn)];
+    return r && Calc.foodVal(r, 'kcal') > 0 ? r : null;
+  }
   function shopBuild(plan, days) {
-    const tot = {};
-    Object.keys(plan).forEach(m => plan[m].forEach(i => { tot[i.f] = (tot[i.f] || 0) + i.g * days; }));
+    const tot = {}, idx = rawIndex();
+    Object.keys(plan).forEach(m => plan[m].forEach(i => {
+      let id = i.f, g = i.g * days; const f = Calc.food(id), r = f ? rawOf(f, idx) : null;
+      if (r) { g = g * Calc.foodVal(f, 'kcal') / Calc.foodVal(r, 'kcal'); id = r.id; }
+      tot[id] = (tot[id] || 0) + g;
+    }));
     return Object.keys(tot).map(id => ({ f: id, g: r10(tot[id]) }));
   }
   function shopLine(it) {
     const f = Calc.food(it.f); if (!f) return null;
-    const pc = Portions.forFood(f, []).find(p => p.pc);
+    const pc = /liquid|pastorizzat/.test(Calc.norm(f.n)) ? null : Portions.forFood(f, []).find(p => p.pc);
     const gTxt = it.g >= 1000 ? UI.fmtA(it.g / 1000, 2) + ' kg' : UI.fmtA(it.g) + ' g';
     let t = f.n + ': ';
     if (pc) { const n = Math.max(1, Math.round(it.g / pc.g)); t += n + ' ' + Portions.pluralOf(pc.label, n) + ' (' + gTxt + ')'; } else t += gTxt;
@@ -688,9 +710,11 @@
     return 'Lista della spesa (' + sh0.days + (sh0.days === 1 ? ' giorno' : ' giorni') + ')\n' + Object.keys(by).sort().map(c => '\n' + c.toUpperCase() + '\n' + by[c].join('\n')).join('\n');
   }
   let lastPlan = null;
-  function shopSheet(plan) {
+  function shopSheet(plan, fx) {
     const st = S().shopping;
-    if (plan) {
+    if (fx) {
+      st.checked = {}; st.days = fx.days; st.items = fx.items.map(i => ({ f: i.f, g: i.g })); st.date = Store.today(); lastPlan = null;
+    } else if (plan) {
       if (plan !== lastPlan || !st.items.length) { lastPlan = plan; st.checked = {}; }
       st.items = shopBuild(plan, st.days || 3); st.date = Store.today();
     } else if (!st.items.length) return UI.toast('Prima crea una proposta con «Proponi giornata»');
@@ -699,15 +723,15 @@
     function draw() {
       const by = {};
       st.items.forEach(it => { const l = shopLine(it); if (l) (by[l.f.cat || 'Altro'] = by[l.f.cat || 'Altro'] || []).push({ it, l }); });
-      sh.set((plan ? UI.seg([[1, '1 giorno'], [3, '3 giorni'], [7, '7 giorni']], st.days, 'noop') : '<p class="small mut mb8">Lista salvata (' + st.days + ' giorni).</p>') +
+      sh.set((fx ? '<p class="small mut mb8">Quantità per i ' + fx.days + ' giorni del piano</p>' : plan ? UI.seg([[1, '1 giorno'], [3, '3 giorni'], [7, '7 giorni']], st.days, 'noop') : '<p class="small mut mb8">Lista salvata (' + st.days + ' giorni).</p>') +
         Object.keys(by).sort().map(c => '<div class="shop-cat">' + esc(c) + '</div>' + by[c].map(x => '<button class="shop-row' + (st.checked[x.it.f] ? ' done' : '') + '" data-sf="' + esc(x.it.f) + '"><span class="shop-box">' + (st.checked[x.it.f] ? UI.icon('check', 16) : '') + '</span><span class="li-main">' + esc(x.l.t) + '</span></button>').join('')).join('') +
         '<div class="row gap mt16"><button class="btn grow" id="sp-copy">Copia</button><button class="btn primary grow" id="sp-share">Condividi</button></div>' +
-        '<button class="btn ghost block mt8" id="sp-clear">Togli tutte le spunte</button><p class="xs mut mt8">Quantità per ' + st.days + (st.days === 1 ? ' giorno' : ' giorni') + ' della proposta, arrotondate. Le spunte restano salvate.</p>');
+        '<button class="btn ghost block mt8" id="sp-clear">Togli tutte le spunte</button><p class="xs mut mt8">Quantità per ' + st.days + (st.days === 1 ? ' giorno' : ' giorni') + (fx ? ' del piano' : ' della proposta') + ', arrotondate. Le spunte restano salvate.</p>');
     }
     draw();
     sh.body.addEventListener('click', async e => {
       const sg = e.target.closest('[data-v]');
-      if (sg && plan) { st.days = +sg.dataset.v; st.items = shopBuild(plan, st.days); Store.change(); draw(); return; }
+      if (sg && plan && !fx) { st.days = +sg.dataset.v; st.items = shopBuild(plan, st.days); Store.change(); draw(); return; }
       const row = e.target.closest('[data-sf]');
       if (row) { const id = row.dataset.sf; if (st.checked[id]) delete st.checked[id]; else st.checked[id] = true; Store.change(); draw(); return; }
       if (e.target.closest('#sp-clear')) { st.checked = {}; Store.change(); draw(); return; }
@@ -718,6 +742,7 @@
       }
     });
   }
+  C.shopSheet = shopSheet; C.shopBuild = shopBuild; C.KW = KW; C.r10 = r10; C.rawKey = rawKey; C.rawIndex = rawIndex; C.rawOf = rawOf;
   UI.acts.noop = () => { };
   UI.on('cibo.shopOpen', () => shopSheet(null));
 

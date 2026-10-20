@@ -55,7 +55,7 @@
   }
   function fill(text, ctx) {
     const v = context(ctx);
-    return String(text).replace(/\{(\w+)\}/g, (m, k) => (v[k] !== undefined ? v[k] : m));
+    return String(text).replace(/\{(\w+)\}/g, (m, k) => (v[k] !== undefined ? v[k] : m)).replace(/[ \t]+([,.!?;:])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim();
   }
 
   function openLink(url) {
