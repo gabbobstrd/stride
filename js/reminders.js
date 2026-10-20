@@ -196,18 +196,19 @@
   }
   function footHtml() {
     const n = items().filter(i => i.on).length;
-    return '<div class="row gap mt12"><button class="btn primary grow" data-act="rem.all"' + (n ? '' : ' disabled') + '>Aggiungi tutti quelli attivi' + (n ? ' (' + n + ')' : '') + '</button></div>' +
+    if (Cloud.pushOn()) return '<button class="btn block mt12" data-act="rem.new">+ Promemoria personalizzato</button>';
+    return '<div class="row gap mt12"><button class="btn primary grow" data-act="rem.all"' + (n ? '' : ' disabled') + '>Aggiungi al Calendario quelli attivi' + (n ? ' (' + n + ')' : '') + '</button></div>' +
       '<button class="btn block mt8" data-act="rem.new">+ Promemoria personalizzato</button>' +
-      '<div class="disc mt12">Le notifiche arrivano dal Calendario dell\'iPhone. Nella versione 2 si accenderanno e spegneranno direttamente da qui.</div>';
+      '<div class="disc mt12">Senza notifiche dirette i promemoria arrivano dal Calendario dell\'iPhone.</div>';
   }
   /* scheda comprimibile per Oggi */
   function card() {
     const n = items().filter(i => i.on).length;
     return '<section class="card"><button class="collapse-h' + (openCard ? ' open' : '') + '" data-act="rem.collapse" style="min-height:24px"><h3 class="card-h-t" style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx2);margin:0">Notifiche' + (n ? ' · ' + n + ' attive' : '') + '</h3><span class="chev-ic">' + UI.icon('chev', 20) + '</span></button>' +
-      (openCard ? '<div class="mt8">' + rowsHtml() + footHtml() + '</div>' : '') + '</section>';
+      (openCard ? '<div class="mt8">' + Cloud.pushBlock() + rowsHtml() + footHtml() + '</div>' : '') + '</section>';
   }
   function page() {
-    return '<div class="card">' + rowsHtml() + footHtml() + '</div>';
+    return '<div class="card">' + Cloud.pushBlock() + rowsHtml() + footHtml() + '</div>';
   }
 
   UI.on('rem.collapse', () => { openCard = !openCard; try { sessionStorage.setItem('compagno_notif_open', openCard ? '1' : '0'); } catch (e) { /* ignora */ } UI.refresh(); });
@@ -219,6 +220,7 @@
     Store.change();
     UI.refresh();
     const upd = itemByKey(it.key);
+    if (Cloud.pushOn()) { UI.toast(st.on ? 'Notifica accesa' : 'Notifica spenta'); return; }
     if (st.on) addSheet(upd); else offSheet(upd);
   });
   UI.on('rem.all', () => {
@@ -275,7 +277,7 @@
         Store.change();
         sh.close();
         UI.refresh();
-        if (st.on && changed) {
+        if (st.on && changed && !Cloud.pushOn()) {
           const upd = itemByKey(st.key);
           UI.sheet({
             title: 'Aggiorna il Calendario', cls: 'small',
@@ -295,5 +297,5 @@
   UI.on('rem.edit', el => editSheet(el.dataset.k, false));
   UI.on('rem.new', () => editSheet(null, true));
 
-  window.Rem = { items, card, page, buildICS, editSheet, itemByKey, summary };
+  window.Rem = { items, card, page, buildICS, editSheet, itemByKey, summary, slots };
 })();

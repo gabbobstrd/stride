@@ -2,3 +2,7 @@ SPEC.md
 REVISIONE.md
 *.bak
 app/
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars
+.claude/

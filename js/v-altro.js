@@ -394,21 +394,16 @@
   /* =============== BACKUP =============== */
   function backupPage() {
     const lb = S().meta.lastBackup;
-    return '<div class="card"><div class="li-s mb8">Ultimo backup: <b style="color:var(--tx)">' + (lb ? esc(UI.dateLong(Store.dkey(new Date(lb)))) : 'mai') + '</b></div>' +
+    return Cloud.backupCard() + '<div class="card"><h3 class="card-h-t mb8">Backup su file</h3><div class="li-s mb8">Ultimo backup: <b style="color:var(--tx)">' + (lb ? esc(UI.dateLong(Store.dkey(new Date(lb)))) : 'mai') + '</b></div>' +
       '<button class="btn primary block mb8" data-act="altro.export">Esporta backup</button>' +
       '<label class="btn block" style="cursor:pointer">Importa backup<input type="file" accept=".json,application/json" id="bk-file" data-ch="altro.import" hidden></label></div>' +
-      '<div class="disc">I dati stanno solo su questo telefono. Le app sulla Home non vengono cancellate da Safari, ma <b>se elimini l\'app Stride perdi tutti i dati</b>. Fai un backup una volta a settimana e salvalo in File o iCloud.</div>';
+      '<div class="disc">Senza backup automatico i dati stanno solo su questo telefono: <b>se elimini l\'app Stride li perdi</b>. Il file è una copia in più da tenere in File o iCloud.</div>';
   }
   UI.on('altro.export', async () => {
     UI.toast('Preparo il backup…');
     try {
-      await Store.saveNow();
-      const ids = await Store.allFileIds(), files = {};
-      for (const id of ids) { const b = await Store.getFile(id); if (b) files[id] = { type: b.type, data: await Store.blobToDataURL(b) }; }
-      // la chiave Gemini resta solo su questo telefono: non entra nel backup
-      const st = Object.assign({}, S(), { settings: Object.assign({}, S().settings) });
-      delete st.settings.geminiKey;
-      const payload = { app: 'stride', v: 1, exported: new Date().toISOString(), state: st, files };
+      // la chiave Gemini e il codice di backup restano solo su questo telefono: non entrano nel file
+      const payload = await Cloud.buildPayload();
       const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       const name = 'stride-backup-' + Store.today() + '.json';
       S().meta.lastBackup = Date.now(); Store.change();
@@ -425,14 +420,8 @@
       const j = JSON.parse(await f.text());
       if (!j || (j.app !== 'stride' && j.app !== 'compagno') || !j.state) throw new Error('non è un backup di Stride');
       if (!await UI.confirm({ title: 'Importare il backup?', msg: 'Sostituisce TUTTI i dati attuali con quelli del file (' + (j.exported ? j.exported.slice(0, 10) : 'senza data') + ').', ok: 'Importa', danger: true })) { el.value = ''; return; }
-      // non sovrascrivere mai la chiave Gemini locale con quella del file
-      const keepKey = (S().settings && S().settings.geminiKey) || '';
-      if (!j.state.settings || typeof j.state.settings !== 'object') j.state.settings = {};
-      j.state.settings.geminiKey = keepKey;
-      await Store.clearFiles();
-      for (const id of Object.keys(j.files || {})) { const fl = j.files[id]; await Store.putFile(id, await Store.dataURLToBlob(fl.data)); }
-      Calc.invalidate();
-      await Store.replaceAll(j.state);
+      // la chiave Gemini e il codice di backup locali non vengono mai sovrascritti dal file
+      await Cloud.applyPayload(j);
       A.sub = null; UI.toast('Backup importato'); UI.refresh();
     } catch (e) { UI.toast('File non valido: ' + e.message); }
     el.value = '';

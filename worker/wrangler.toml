@@ -1,0 +1,16 @@
+name = "stride-api"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# ogni minuto: controlla gli orari delle notifiche
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "STRIDE"
+id = "31c32c5781774f0794d9ed70f1015686"
+
+[vars]
+VAPID_PUBLIC = "BHu_6olJmcbnfl8Xmno9zpph7Y9rEoKXccO0Y90UxqvkDYvWdpGR13RI2ao_FAPpLvOQ8hEVQ0pybTQXFDXGOlQ"
+VAPID_SUBJECT = "https://stride-8i8.pages.dev"
+# VAPID_PRIVATE_JWK è un segreto: si imposta con «wrangler secret put», mai qui

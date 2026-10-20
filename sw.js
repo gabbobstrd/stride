@@ -1,10 +1,10 @@
 /* Compagno - service worker: tutto offline dopo la prima apertura */
-const VERSION = 'stride-v1.3.10';
+const VERSION = 'stride-v1.3.11';
 const FILES = [
   './', 'index.html', 'styles.css', 'fonts/manrope.woff2', 'manifest.webmanifest', 'foods.js', 'js/foods-crea.js', 'js/foods-usda2.js', 'js/foods-extra.js',
   'vendor/chart.umd.min.js', 'vendor/html5-qrcode.min.js',
   'js/portions.js', 'js/salute.js', 'js/ai.js', 'js/checkin.js', 'js/voce-parse.js', 'js/v-voce.js',
-  'js/store.js', 'js/data.js', 'js/calc.js', 'js/ui.js', 'js/advice.js', 'js/reminders.js', 'js/partner.js',
+  'js/store.js', 'js/data.js', 'js/calc.js', 'js/ui.js', 'js/advice.js', 'js/reminders.js', 'js/cloud.js', 'js/partner.js',
   'js/v-oggi.js', 'js/v-cibo.js', 'js/body-map.js', 'js/ex-media.js', 'js/ex-art.js', 'js/v-palestra.js', 'js/v-profilo.js', 'js/v-grafici.js', 'js/v-altro.js', 'js/v-coach.js', 'js/demo.js', 'js/app.js',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png'
 ];
@@ -55,5 +55,20 @@ self.addEventListener('fetch', e => {
     if (hit) { net.catch(() => { }); return hit; }
     const res = await net;
     return res || Response.error();
+  })());
+});
+
+/* notifiche dirette dal Worker Stride */
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Stride', { body: d.body || '', tag: d.tag || undefined, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: d.url || './' } }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow((e.notification.data && e.notification.data.url) || './');
   })());
 });

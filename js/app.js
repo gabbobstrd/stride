@@ -21,7 +21,8 @@
         '<p class="small mut mt8">Il tuo diario di cibo, allenamento e salute. I dati restano su questo telefono. Dimmi qualcosa di te e calcolo i tuoi numeri: ci metti 1 minuto.</p></div>' +
         Altro.profileForm() + Altro.profileResult() +
         '<button class="btn primary block mb12" data-act="app.start">Inizia</button>' +
-        '<p class="xs mut center">Potrai cambiare tutto in Altro → Profilo e obiettivi.</p>';
+        '<p class="xs mut center">Potrai cambiare tutto in Altro → Profilo e obiettivi.</p>' +
+        '<button class="btn block mt12" data-act="cloud.restore">Ho già un codice di backup: ripristina</button>';
     }
   });
   function startOnboarding() {
@@ -79,6 +80,7 @@
       if (t !== lastDay) { Oggi.date = t; Cibo.date = t; lastDay = t; UI.refresh(); }
     });
     window.addEventListener('error', e => console.error('Errore:', e.message));
+    Cloud.start();
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       navigator.serviceWorker.register('sw.js').then(r => { try { r.update(); } catch (e) { /* ignora */ } }).catch(() => { });
     }
