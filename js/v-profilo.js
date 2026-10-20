@@ -165,7 +165,7 @@
   /* ---------- schermata Muscoli: giorno / settimana ---------- */
   function musclesOpen(anchor0, mode0) {
     const today = Store.today();
-    let mode = mode0 || 'week', anchor = anchor0 || today, sel = null;
+    let mode = mode0 || 'week', anchor = anchor0 || today, sel = null, openMg = null;
     const sh = UI.sheet({ title: 'Distribuzione del corpo', cls: 'tall' });
     const wkStart = () => mondayOf(anchor);
     function title() {
@@ -186,12 +186,25 @@
           return '<button class="hv-day' + (sel === d ? ' on' : '') + '" data-d="' + d + '" aria-label="' + esc(UI.dateLabel(d)) + '"><small>' + LET[dt.getDay()] + '</small><b>' + dt.getDate() + '</b>' + (td.has(d) ? '<i></i>' : '') + '</button>';
         }).join('') + '</div>';
       }
-      const rows = MG_ORDER.map(k => '<div class="hv-mrow"><span>' + esc(D.MUSCLES[k]) + '</span><b>' + UI.fmtA(r.m[k] || 0, 1) + '</b></div>').join('');
+      /* muscolo aperto: esercizi del periodo che lo lavorano (principale o secondario), con serie, kg e ripetizioni */
+      const detail = mg => {
+        const it = [];
+        sessions().filter(x => x.date >= from && x.date <= to).sort((a, b) => (b.date + (b.start || '')).localeCompare(a.date + (a.start || ''))).forEach(x => x.ex.forEach(e => {
+          const ex = Calc.exById(e.e); if (!ex) return;
+          const prim = ex.mg === mg; if (!prim && (ex.sec || []).indexOf(mg) < 0) return;
+          const ds = Calc.doneSets(e); if (!ds.length) return;
+          it.push({ d: x.date, id: e.e, prim, ds });
+        }));
+        if (!it.length) return '<div class="hv-mdet"><p class="hv-sub">Nessuna serie in questo periodo.</p></div>';
+        return '<div class="hv-mdet">' + it.map(o => '<button class="hv-mex" data-exd="' + esc(o.id) + '"><span class="hv-mexh"><b>' + esc(Calc.exName(o.id)) + '</b><em' + (o.prim ? ' class="p"' : '') + '>' + (o.prim ? 'principale' : 'secondario') + '</em></span>' +
+          '<small>' + esc(UI.dateLabel(o.d)) + ' · ' + o.ds.length + (o.ds.length === 1 ? ' serie' : ' serie') + '</small><span class="hv-mexs">' + esc(P.fmtSets(o.ds)) + '</span></button>').join('') + '</div>';
+      };
+      const rows = MG_ORDER.map(k => '<button class="hv-mrow btn-mg' + (openMg === k ? ' on' : '') + '" data-mg="' + k + '" aria-expanded="' + (openMg === k) + '"><span>' + esc(D.MUSCLES[k]) + '</span><b>' + UI.fmtA(r.m[k] || 0, 1) + UI.icon(openMg === k ? 'down' : 'right', 16) + '</b></button>' + (openMg === k ? detail(k) : '')).join('');
       sh.set('<div class="hv-mtop">' + UI.seg([['day', 'Giorno'], ['week', 'Settimana']], mode, 'noop') + '</div>' +
         '<div class="hv-calh"><button class="icon-btn" data-nav="-1" aria-label="Indietro">' + UI.icon('left', 22) + '</button><b>' + esc(title()) + '</b><button class="icon-btn" data-nav="1" aria-label="Avanti">' + UI.icon('right', 22) + '</button></div>' +
         chips + figures(r.m, 130) +
         '<div class="hv-mh"><span>Muscolo</span><span>Serie</span></div><div class="hv-mrow tot"><span>Totale</span><b>' + r.total + '</b></div>' + rows +
-        '<p class="hv-sub">Ogni serie conta 1 per il muscolo principale e mezza per i secondari. Il riscaldamento non conta. «Totale» = serie fatte.</p>');
+        '<p class="hv-sub">Tocca un muscolo per vedere esercizi, serie, kg e ripetizioni. Ogni serie conta 1 per il muscolo principale e mezza per i secondari. Il riscaldamento non conta. «Totale» = serie fatte.</p>');
     }
     draw();
     sh.body.addEventListener('click', e => {
@@ -200,7 +213,11 @@
       const n = e.target.closest('[data-nav]');
       if (n) { anchor = Store.addDays(anchor, +n.dataset.nav * (mode === 'day' ? 1 : 7)); sel = null; draw(); return; }
       const d = e.target.closest('[data-d]');
-      if (d) { sel = sel === d.dataset.d ? null : d.dataset.d; draw(); }
+      if (d) { sel = sel === d.dataset.d ? null : d.dataset.d; draw(); return; }
+      const x = e.target.closest('[data-exd]');
+      if (x) { exDetail(x.dataset.exd); return; }
+      const g = e.target.closest('[data-mg]');
+      if (g) { openMg = openMg === g.dataset.mg ? null : g.dataset.mg; draw(); }
     });
   }
   P.musclesOpen = musclesOpen;

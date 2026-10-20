@@ -42,7 +42,7 @@
     rows.push({ l: 'Proteine medie', t: c.logged ? fmt(c.prot) + ' g / ' + fmt(tg.prot) + ' g obiettivo' : 'n.d.' });
     rows.push({ l: 'Allenamenti', t: c.sessions + ' fatti' + (planned() ? ' su ' + planned() + ' previsti' : '') });
     const m = Object.keys(c.sets).filter(k => c.sets[k] > 0).sort((a, b) => c.sets[b] - c.sets[a]);
-    rows.push({ l: 'Serie per muscolo', t: m.length ? m.slice(0, 8).map(k => D.MUSCLES[k].toLowerCase() + ' ' + UI.fmtA(c.sets[k], 1) + (c.sets[k] < 10 ? ' (sotto 10)' : c.sets[k] > 20 ? ' (sopra 20)' : '')).join(', ') + ' · fascia utile 10–20' : 'nessuna serie' });
+    rows.push({ act: 'checkin.muscles', l: 'Serie per muscolo', t: m.length ? m.slice(0, 8).map(k => D.MUSCLES[k].toLowerCase() + ' ' + UI.fmtA(c.sets[k], 1) + (c.sets[k] < 10 ? ' (sotto 10)' : c.sets[k] > 20 ? ' (sopra 20)' : '')).join(', ') + ' · fascia utile 10–20' : 'nessuna serie' });
     rows.push({ l: 'Sonno medio', t: c.sleep === null ? 'n.d.' : fmt(c.sleep, 1) + ' ore' + diff(c.sleep, p.sleep, 1, 'h') });
     rows.push({ l: 'Energia media', t: c.energy === null ? 'n.d.' : fmt(c.energy, 1) + ' su 5' });
     rows.push({ l: 'Passi medi', t: c.steps === null ? 'n.d.' : fmt(c.steps) });
@@ -67,11 +67,14 @@
     if (date !== Store.today() || !S().profile || !due()) return '';
     const s = summary();
     return UI.card('Check-in della settimana',
-      '<div class="list">' + s.rows.map(r => '<div class="li" style="min-height:40px;align-items:flex-start"><div class="li-main"><div class="li-s" style="white-space:normal">' + esc(r.l) + '</div><div style="font-size:14px">' + esc(r.t) + '</div></div></div>').join('') + '</div>' +
+      '<div class="list">' + s.rows.map(r => r.act ? '<button class="li" data-act="' + r.act + '" style="min-height:40px;align-items:center"><div class="li-main"><div class="li-s" style="white-space:normal">' + esc(r.l) + ' · <span style="color:var(--acc)">tocca per i dettagli</span></div><div style="font-size:14px">' + esc(r.t) + '</div></div>' + UI.icon('right', 16) + '</button>'
+        : '<div class="li" style="min-height:40px;align-items:flex-start"><div class="li-main"><div class="li-s" style="white-space:normal">' + esc(r.l) + '</div><div style="font-size:14px">' + esc(r.t) + '</div></div></div>').join('') + '</div>' +
       '<div class="row gap mt8"><button class="btn grow" data-act="checkin.done">Fatto</button><button class="btn primary grow" data-act="checkin.coach">Chiedi al Coach</button></div>' +
       '<p class="xs mut mt8">Ultimi 7 giorni completi (' + esc(UI.dateShort(s.from)) + ' – ' + esc(UI.dateShort(s.to)) + ') contro i 7 precedenti. Calcolo fatto sul telefono.</p>',
       { right: UI.dateShort(s.from) + ' – ' + UI.dateShort(s.to) });
   }
+  /* serie per muscolo: apre la settimana (lun–dom) che copre quasi tutto il check-in: quella del suo 4° giorno */
+  UI.on('checkin.muscles', () => { if (window.Pal && Pal.musclesOpen) Pal.musclesOpen(Store.addDays(windows().cur[0], 3), 'week'); });
   UI.on('checkin.done', () => {
     const s = summary(), c = s.cur;
     S().checkins.push({ date: Store.today(), from: s.from, to: s.to, w: c.w === null ? null : Math.round(c.w * 10) / 10, kcal: c.kcal === null ? null : Math.round(c.kcal), prot: c.logged ? Math.round(c.prot) : null, logged: c.logged, sessions: c.sessions });

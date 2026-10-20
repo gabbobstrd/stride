@@ -488,6 +488,18 @@ button.hv-prev:active { background: #2C2C2E; }
 .hv-mrow { display: flex; justify-content: space-between; align-items: center; min-height: 54px; font-size: 18px; border-bottom: 1px solid #1C1C1E; padding: 0 2px; }
 .hv-mrow.tot { margin: 0; }
 .hv-mrow b { font-weight: 500; }
+button.hv-mrow { width: 100%; background: none; border: 0; border-bottom: 1px solid #1C1C1E; color: inherit; font: inherit; font-size: 18px; text-align: left; cursor: pointer; }
+.hv-mrow b { display: inline-flex; align-items: center; white-space: nowrap; }
+.hv-mrow b svg { margin-left: 8px; opacity: .55; }
+.hv-mrow.on { color: #3B82F6; }
+.hv-mdet { padding: 4px 0 10px; border-bottom: 1px solid #1C1C1E; }
+.hv-mex { display: block; width: 100%; text-align: left; background: #1C1C1E; border: 0; border-radius: 12px; color: inherit; font: inherit; padding: 10px 12px; margin: 6px 0; cursor: pointer; }
+.hv-mexh { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.hv-mexh b { font-size: 15px; font-weight: 600; }
+.hv-mexh em { font-style: normal; font-size: 11px; color: var(--tx2); border: 1px solid #3A3A3C; border-radius: 99px; padding: 1px 7px; flex: none; }
+.hv-mexh em.p { color: #FF453A; border-color: rgba(255,69,58,.5); }
+.hv-mex small { display: block; color: var(--tx2); font-size: 12px; margin-top: 2px; }
+.hv-mexs { display: block; font-size: 14px; margin-top: 4px; }
 .hv-title { font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin: 6px 0 14px; }
 .hv-stats.s4 { grid-template-columns: 1fr 1fr 1fr 86px; align-items: center; margin: 0 -16px 10px; padding: 10px 16px; border-bottom: 1px solid #1C1C1E; }
 .hv-stats b.bl { color: #3B82F6; }
