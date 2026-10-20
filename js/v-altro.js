@@ -482,7 +482,7 @@
   function creditiPage() {
     const a = (u, t) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + '</a>';
     const cr = [
-      ['Disegni degli esercizi', 'Workout Guide di Bryl Lim (' + a('https://github.com/bryllim/workout-guide', 'github.com/bryllim/workout-guide') + '), pose da Everkinetic (' + a('https://github.com/everkinetic/data', 'everkinetic/data') + '). Licenza ' + a('https://creativecommons.org/licenses/by-sa/4.0/', 'CC BY-SA 4.0') + '. Disegni usati senza modifiche; i muscoli in rosso sono una figura separata di Stride.'],
+      ['Disegni degli esercizi', 'Workout Guide di Bryl Lim (' + a('https://github.com/bryllim/workout-guide', 'github.com/bryllim/workout-guide') + '), pose da Everkinetic (' + a('https://github.com/everkinetic/data', 'everkinetic/data') + '). Licenza ' + a('https://creativecommons.org/licenses/by-sa/4.0/', 'CC BY-SA 4.0') + '. File originali non modificati; nei cerchi Stride li mostra con i colori invertiti (nero su bianco). I muscoli in rosso sono una figura separata di Stride.'],
       ['Foto degli esercizi', 'free-exercise-db (' + a('https://github.com/yuhonas/free-exercise-db', 'github.com/yuhonas/free-exercise-db') + '), Unlicense / pubblico dominio. Usate solo dove manca un disegno.'],
       ['Figura del corpo', 'Tracciati da react-native-body-highlighter (' + a('https://github.com/HichamELBSI/react-native-body-highlighter', 'HichamELBSI/react-native-body-highlighter') + '), licenza MIT.'],
       ['Font', 'Manrope, © 2019 The Manrope Project Authors, ' + a('https://openfontlicense.org', 'SIL Open Font License 1.1') + ' (testo in fonts/OFL.txt).'],

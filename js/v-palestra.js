@@ -364,7 +364,7 @@
       let list = Calc.allExercises().filter(e => mg === 'tutti' || e.mg === mg);
       const toks = Calc.norm(q).split(/\s+/).filter(Boolean);
       if (toks.length) list = list.filter(e => { const n = Calc.norm(e.n); return toks.every(t => n.indexOf(t) >= 0); });
-      res.innerHTML = '<div class="list">' + list.map(e => '<button class="li" data-id="' + esc(e.id) + '"><div class="li-main"><div class="li-t">' + esc(e.n) + '</div><div class="li-s">' + esc(D.MUSCLES[e.mg] || '') + ' · ' + esc(D.EQUIP[e.eq] || '') + '</div></div></button>').join('') + '</div><button class="btn block mt12" data-new="1">+ Crea un esercizio mio</button>';
+      res.innerHTML = '<div class="list">' + list.map(e => '<button class="li px-li" data-id="' + esc(e.id) + '">' + circle(e.id).replace('hv-ci', 'hv-ci xl') + '<div class="li-main"><div class="li-t">' + esc(e.n) + '</div><div class="li-s">' + esc(D.MUSCLES[e.mg] || '') + ' · ' + esc(D.EQUIP[e.eq] || '') + '</div></div></button>').join('') + '</div><button class="btn block mt12" data-new="1">+ Crea un esercizio mio</button>';
     }
     draw();
     sh.body.querySelector('#px-q').addEventListener('input', e => { q = e.target.value; draw(); });

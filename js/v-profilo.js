@@ -359,7 +359,7 @@
     let list = Calc.allExercises().filter(e => P.exMg === 'tutti' || e.mg === P.exMg);
     if (toks.length) list = list.filter(e => { const n = Calc.norm(e.n); return toks.every(t => n.indexOf(t) >= 0); });
     if (!list.length) return UI.empty('Nessun esercizio trovato.');
-    return '<div class="list">' + list.map(e => '<button class="li" data-act="pal.exInfo" data-id="' + esc(e.id) + '">' + circle(e.id) + '<div class="li-main"><div class="li-t">' + esc(e.n) + (e.id.indexOf('x_') === 0 ? ' ' + UI.badge('mio') : '') + '</div><div class="li-s">' + esc(D.MUSCLES[e.mg] || '') + ' · ' + esc(D.EQUIP[e.eq] || '') + '</div></div>' + UI.icon('right', 16) + '</button>').join('') + '</div>';
+    return '<div class="list">' + list.map(e => '<button class="li px-li" data-act="pal.exInfo" data-id="' + esc(e.id) + '">' + circle(e.id).replace('hv-ci', 'hv-ci xl') + '<div class="li-main"><div class="li-t">' + esc(e.n) + (e.id.indexOf('x_') === 0 ? ' ' + UI.badge('mio') : '') + '</div><div class="li-s">' + esc(D.MUSCLES[e.mg] || '') + ' · ' + esc(D.EQUIP[e.eq] || '') + '</div></div>' + UI.icon('right', 16) + '</button>').join('') + '</div>';
   }
   UI.on('pal.exList', () => {
     const mgs = [['tutti', 'Tutti']].concat(Object.keys(D.MUSCLES).map(k => [k, D.MUSCLES[k]]));

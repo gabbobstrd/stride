@@ -1,5 +1,5 @@
 /* Compagno - service worker: tutto offline dopo la prima apertura */
-const VERSION = 'stride-v1.3.9';
+const VERSION = 'stride-v1.3.10';
 const FILES = [
   './', 'index.html', 'styles.css', 'fonts/manrope.woff2', 'manifest.webmanifest', 'foods.js', 'js/foods-crea.js', 'js/foods-usda2.js', 'js/foods-extra.js',
   'vendor/chart.umd.min.js', 'vendor/html5-qrcode.min.js',

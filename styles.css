@@ -522,10 +522,15 @@ button.hv-mrow { width: 100%; background: none; border: 0; border-bottom: 1px so
 .ex-media.art img { inset: 12px; width: calc(100% - 24px); height: calc(100% - 24px); }
 .ex-media .ex-bm { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,.55); border-radius: 10px; padding: 5px 6px; }
 .ex-media.fail .ex-bm { display: none; }
-.hv-ci.art { background: #2C2C2E; }
-.hv-ci.art img { object-fit: contain; padding: 3px; box-sizing: border-box; }
-.hv-ci.art b { color: #fff; }
+.hv-ci.art { background: #fff; }
+.hv-ci.art img { object-fit: contain; padding: 4px; box-sizing: border-box; filter: invert(1); }
+.hv-ci.art b { color: #000; }
 .hv-ci.art img + b { visibility: hidden; }
+/* lista «Scegli esercizio»: righe alte con il disegno grande nel cerchio */
+.li.px-li { min-height: 84px; gap: 12px; padding: 8px 0; }
+.li.px-li .li-t { font-size: 16px; white-space: normal; }
+.hv-ci.xl { width: 68px; height: 68px; font-size: 20px; margin-right: 0; }
+.hv-ci.xl.art img { padding: 7px; }
 .hv-exinfo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .hv-exinfo .bm { gap: 4px; }
 .hv-steps { padding-left: 20px; color: #8E8E93; font-size: 15px; line-height: 1.5; }
