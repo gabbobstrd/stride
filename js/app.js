@@ -1,7 +1,7 @@
 /* Compagno - avvio, navigazione, primo avvio */
 (function () {
   'use strict';
-  window.APP_VERSION = '1.1';
+  window.APP_VERSION = '1.3.12';
   const esc = UI.esc;
   const TABS = [['oggi', 'Oggi'], ['cibo', 'Cibo'], ['palestra', 'Palestra'], ['grafici', 'Grafici'], ['altro', 'Altro']];
 

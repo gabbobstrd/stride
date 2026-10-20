@@ -187,11 +187,51 @@
   }
   const SUPP_PRESETS = [['vitD', 'Vitamina D'], ['mg', 'Magnesio'], ['fe', 'Ferro'], ['zn', 'Zinco'], ['b12', 'Vitamina B12'], ['o3', 'Omega-3 (g)'], ['ca', 'Calcio'], ['vitC', 'Vitamina C'], ['b9', 'Folati']];
   const NUT_SUPP = ['vitA', 'vitC', 'vitD', 'vitE', 'vitK', 'b1', 'b2', 'b3', 'b5', 'b6', 'b9', 'b12', 'coline', 'ca', 'mg', 'p', 'fe', 'zn', 'cu', 'mn', 'se', 'k', 'epadha', 'o3', 'caff'];
+  /* foto dell'etichetta -> JPEG ridotto (lato max 1600 px) in base64 */
+  function shrinkImage(file) {
+    return new Promise((ok, ko) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const sc = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('Non riesco ad aprire la foto')); };
+      img.src = url;
+    });
+  }
+  /* Gemini legge la tabella nutrizionale: valori per UNA dose, già nell'unità dell'app */
+  async function readLabel(file) {
+    const data = await shrinkImage(file);
+    const list = NUT_SUPP.map(k => k + ' = ' + D.NMAP[k].n + ' (' + D.NMAP[k].u + ')').join('\n');
+    return AI.json({
+      image: { mime: 'image/jpeg', data },
+      temperature: 0,
+      prompt: 'Questa è la foto dell\'etichetta di un integratore. Leggi la tabella nutrizionale e restituisci i valori per UNA dose giornaliera consigliata (se la tabella ha più colonne usa quella per dose/porzione, non per 100 g).\n' +
+        'Usa solo queste chiavi e converti la quantità nell\'unità indicata (1 mg = 1000 µg; vitamina D: 40 UI = 1 µg; vitamina A in µg RE; EPA+DHA e Omega-3 in grammi):\n' + list + '\n' +
+        'Ignora i nutrienti che non sono nell\'elenco e le percentuali %VNR. Non inventare valori che non leggi. ' +
+        'name = nome commerciale del prodotto; dose e unit = la dose giornaliera (unit una tra ' + UNITS.join(', ') + ', «capsule» anche per compresse/softgel); per = descrizione breve della dose, es. «2 capsule».'
+      ,
+      schema: {
+        type: 'OBJECT',
+        properties: {
+          name: { type: 'STRING' }, dose: { type: 'NUMBER' }, unit: { type: 'STRING', enum: UNITS }, per: { type: 'STRING' },
+          nutrients: { type: 'ARRAY', items: { type: 'OBJECT', properties: { k: { type: 'STRING', enum: NUT_SUPP }, amount: { type: 'NUMBER' } }, required: ['k', 'amount'] } }
+        },
+        required: ['nutrients']
+      }
+    });
+  }
   function suppForm(s, pre) {
     const x = s || pre || { n: '', dose: '', unit: 'g', when: 'mattina', v: {}, active: true };
     const sh = UI.sheet({
       title: s ? 'Modifica integratore' : 'Nuovo integratore', cls: 'tall',
-      html: UI.field('Nome', UI.inp({ id: 'sf-n', value: x.n, ph: 'es. Creatina monoidrato' })) +
+      html: '<label class="btn block mb8" id="sf-photo" style="cursor:pointer">📷 Leggi l\'etichetta con una foto<input type="file" id="sf-file" accept="image/*" hidden></label>' +
+        '<p class="hint mb12" id="sf-photo-h">Fotografa la tabella dei valori: Gemini compila i campi, tu controlli e premi Salva. La foto va a Google e non viene salvata nell\'app.</p>' +
+        UI.field('Nome', UI.inp({ id: 'sf-n', value: x.n, ph: 'es. Creatina monoidrato' })) +
         '<div class="grid2">' + UI.field('Dose', UI.inp({ id: 'sf-d', value: x.dose, dec: 1, ph: '5' })) + UI.field('Unità', UI.select(UNITS.map(u => [u, u]), x.unit, 'id="sf-u"')) + '</div>' +
         UI.field('Quando', UI.select(WHEN.map(u => [u, u]), x.when, 'id="sf-w"')) +
         '<div class="sec-t" style="margin-top:6px">Contenuto per dose (facoltativo)</div><p class="hint mb8">Valori scritti sull\'etichetta, per una dose. Verranno sommati ai totali del giorno quando spunti l\'integratore (nelle barre dei micronutrienti compaiono in un colore a parte).</p>' +
@@ -216,8 +256,33 @@
       if (rp) { rows.push({ k: rp.dataset.rp, amt: '', ui: false }); drawRows(); }
       else if (rr) { rows.splice(+rr.dataset.rr, 1); drawRows(); }
     });
-    sh.body.addEventListener('change', e => {
+    sh.body.addEventListener('change', async e => {
       const t = e.target;
+      if (t.id === 'sf-file') {
+        const f = t.files && t.files[0]; t.value = ''; if (!f) return;
+        const btn = sh.body.querySelector('#sf-photo'), hint = sh.body.querySelector('#sf-photo-h'), old = btn.firstChild.textContent;
+        btn.classList.add('dis'); btn.style.pointerEvents = 'none'; btn.firstChild.textContent = 'Leggo l\'etichetta…';
+        try {
+          const r = await readLabel(f);
+          const g = id => sh.body.querySelector(id);
+          if (r.name && !g('#sf-n').value.trim()) g('#sf-n').value = r.name;
+          if (r.dose > 0) g('#sf-d').value = num(r.dose);
+          if (r.unit && UNITS.includes(r.unit)) g('#sf-u').value = r.unit;
+          let n = 0;
+          (r.nutrients || []).forEach(q => {
+            const amt = Number(q.amount);
+            if (!D.NMAP[q.k] || !NUT_SUPP.includes(q.k) || !(amt > 0)) return;
+            const v = Math.round(amt * 1000) / 1000, ex = rows.find(z => z.k === q.k);
+            if (ex) { ex.amt = num(v); ex.ui = false; } else rows.push({ k: q.k, amt: num(v), ui: false });
+            n++;
+          });
+          drawRows();
+          hint.innerHTML = '✅ Letto' + (r.per ? ' (valori per ' + esc(r.per) + ')' : '') + ': ' + n + ' nutrienti. <b>Controlla i numeri con l\'etichetta</b>, poi premi Salva.';
+          UI.toast(n ? 'Etichetta letta: controlla e salva' : 'Nessun valore trovato: prova una foto più nitida');
+        } catch (err) { UI.toast(err.message || 'Non riesco a leggere l\'etichetta'); }
+        btn.classList.remove('dis'); btn.style.pointerEvents = ''; btn.firstChild.textContent = old;
+        return;
+      }
       if (t.id === 'sf-addk') { if (t.value && !rows.some(r => r.k === t.value)) rows.push({ k: t.value, amt: '', ui: false }); t.value = ''; drawRows(); }
       else if (t.dataset.ra != null) { rows[+t.dataset.ra].amt = t.value; drawRows(); }
       else if (t.dataset.ru != null) { rows[+t.dataset.ru].ui = t.value === '1'; drawRows(); }
