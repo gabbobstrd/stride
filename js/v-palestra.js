@@ -110,17 +110,24 @@
     const idx = (S().nextDayIdx || 0) % prog.days.length;
     return { prog, day: prog.days[idx], idx };
   }
-  function mkSets(eid, plan, n) {
+  function mkSets(eid, plan, n, rows) {
     const pg = Calc.progression(eid, plan);
     const lp = Calc.lastPerformance(eid);
-    return Array.from({ length: n }, (_, i) => {
+    return Array.from({ length: rows ? rows.length : n }, (_, i) => {
       const ls = lp ? lp.sets[Math.min(i, lp.sets.length - 1)] : null;
-      return { w: pg ? pg.w : (ls ? ls.w : ''), r: '', rpe: '', done: false };
+      const st = { w: pg ? pg.w : (ls ? ls.w : ''), r: '', rpe: '', done: false };
+      const rw = rows && rows[i];
+      if (rw) { // kg, ripetizioni e tipo scritti nella routine
+        if (rw.w !== '' && rw.w != null) st.w = rw.w;
+        if (rw.t) st.t = rw.t;
+        if (+rw.rx > +rw.r) st.tr = rw.r + '–' + rw.rx; else if (+rw.r > 0) st.r = +rw.r;
+      }
+      return st;
     });
   }
-  function mkEx(eid, plan) {
+  function mkEx(eid, plan, rows) {
     plan = plan || { sets: 3, rmin: 8, rmax: 12, rest: 90 };
-    return { e: eid, plan: { sets: plan.sets, rmin: plan.rmin, rmax: plan.rmax, rest: plan.rest }, sets: mkSets(eid, plan, plan.sets || 3) };
+    return { e: eid, plan: { sets: plan.sets, rmin: plan.rmin, rmax: plan.rmax, rest: plan.rest }, sets: mkSets(eid, plan, plan.sets || 3, rows && rows.length ? rows : null) };
   }
   function start(progId, dayIdx) {
     if (S().activeSession) return UI.toast('C\'è già una sessione in corso');
@@ -129,7 +136,7 @@
     if (prog && prog.days[dayIdx]) {
       const day = prog.days[dayIdx];
       sess.prog = prog.id; sess.day = day.id; sess.name = day.n;
-      sess.ex = day.ex.map(pe => mkEx(pe.e, { sets: pe.sets, rmin: pe.rmin, rmax: pe.rmax, rest: pe.rest }));
+      sess.ex = day.ex.map(pe => mkEx(pe.e, { sets: pe.sets, rmin: pe.rmin, rmax: pe.rmax, rest: pe.rest }, pe.rows));
     }
     S().activeSession = sess;
     Store.change();
@@ -235,7 +242,7 @@
   }
   P.fmtSets = fmtSets;
   function setRowHtml(ei, si, st, plan, lp, lab, prevSet, rpeOn) {
-    const rph = prevSet ? prevSet.r : (plan && plan.rmin ? plan.rmin + (plan.rmax && plan.rmax !== plan.rmin ? '–' + plan.rmax : '') : 'rip');
+    const rph = st.tr ? st.tr : prevSet ? prevSet.r : (plan && plan.rmin ? plan.rmin + (plan.rmax && plan.rmax !== plan.rmin ? '–' + plan.rmax : '') : 'rip');
     const wph = prevSet ? num(prevSet.w) : 'kg';
     const prev = prevSet
       ? '<button class="hv-prev" data-act="pal.prev" data-w="' + esc(prevSet.w) + '" data-r="' + esc(prevSet.r) + '" aria-label="Copia la serie precedente">' + kgS(prevSet.w) + ' kg × ' + esc(prevSet.r) + '</button>'
@@ -315,6 +322,7 @@
     const p = S().programs.find(x => x.id === pid); if (!p) return {};
     return { p, d: p.days.find(x => x.id === did), i: p.days.findIndex(x => x.id === did) };
   }
+  const rowLab = (rw, next) => rw.t === 'w' ? 'R' : rw.t === 'd' ? 'D' : rw.t === 'f' ? 'C' : String(next());
   function routineDetail(p, d) {
     const sh = UI.sheet({ title: 'Routine', cls: 'tall' });
     let metric = 'vol';
@@ -323,10 +331,13 @@
     const CH = [['vol', 'Volume'], ['rip', 'Ripetizioni'], ['dur', 'Durata']];
     function exTable(pe) {
       const lp = Calc.lastPerformance(pe.e);
-      let rows = '';
-      for (let i = 0; i < (pe.sets || 3); i++) {
-        const ls = lp ? lp.sets[Math.min(i, lp.sets.length - 1)] : null;
-        rows += '<div class="hv-tr"><span>' + (i + 1) + '</span><span>' + (ls ? kgS(ls.w) : '–') + '</span><span>' + (pe.rmin ? pe.rmin + (pe.rmax !== pe.rmin ? '–' + pe.rmax : '') : '–') + '</span></div>';
+      let rows = '', nn = 0;
+      const rr = pe.rows && pe.rows.length ? pe.rows : null;
+      for (let i = 0; i < (rr ? rr.length : (pe.sets || 3)); i++) {
+        const ls = lp ? lp.sets[Math.min(i, lp.sets.length - 1)] : null, rw = rr ? rr[i] : null;
+        const kg = rw && rw.w !== '' && rw.w != null ? kgS(rw.w) : (ls ? kgS(ls.w) : '–');
+        const rp = rw && +rw.r > 0 ? rw.r + (+rw.rx > +rw.r ? '–' + rw.rx : '') : (pe.rmin ? pe.rmin + (pe.rmax !== pe.rmin ? '–' + pe.rmax : '') : '–');
+        rows += '<div class="hv-tr"><span>' + (rw ? rowLab(rw, () => ++nn) : (i + 1)) + '</span><span>' + kg + '</span><span>' + rp + '</span></div>';
       }
       return '<div class="hv-exh">' + circle(pe.e) + '<button class="hv-exn" data-ex="' + esc(pe.e) + '">' + esc(Calc.exName(pe.e)) + '</button></div>' +
         '<div class="hv-tr head"><span>Serie</span><span>Kg</span><span>Ripetizioni</span></div>' + rows;
@@ -375,43 +386,81 @@
       const ex = Calc.exById(b.dataset.id); if (ex) { cb(ex); sh.close(); }
     });
   }
+  /* righe della routine: [{w, r, rx, t}] (rx = ripetizioni massime se è un intervallo); le routine vecchie senza righe vengono espanse qui */
+  function normEx(x) {
+    if (x.rows && x.rows.length) return x;
+    x.range = x.rmax > x.rmin;
+    x.rows = Array.from({ length: x.sets || 3 }, () => ({ w: '', r: x.rmin || '', rx: x.range ? x.rmax : '', t: '' }));
+    return x;
+  }
+  /* tiene allineati sets, rmin e rmax, usati da progressione e messaggi */
+  function syncEx(x) {
+    if (!x.range) x.rows.forEach(r => { r.rx = ''; });
+    x.sets = x.rows.length;
+    const on = x.rows.filter(r => r.t !== 'w' && +r.r > 0);
+    if (on.length) { x.rmin = Math.min.apply(null, on.map(r => +r.r)); x.rmax = Math.max.apply(null, on.map(r => Math.max(+r.r, +r.rx || 0))); }
+  }
   function dayEditor(prog, day, isNew) {
     const draft = JSON.parse(JSON.stringify(day));
+    draft.ex.forEach(normEx);
     const sh = UI.sheet({ title: isNew ? 'Nuova routine' : 'Modifica la routine', cls: 'tall' });
-    const nI = (attrs, val) => '<input class="inp" inputmode="numeric" ' + attrs + ' value="' + (val == null ? '' : val) + '" style="text-align:center;min-height:44px;padding:4px;font-size:16px">';
-    const grid = 'grid-template-columns:1fr 40px 40px 40px 48px;gap:4px';
+    function exCard(x, xi) {
+      const lp = Calc.lastPerformance(x.e);
+      const f = (cl, ph) => 'class="setrow hs ed' + (x.range ? ' rg' : '') + cl + '"' + ph;
+      let nn = 0;
+      return '<section class="hv-ex"><div class="hv-exh">' + circle(x.e) + '<b class="hv-exn" style="flex:1">' + esc(Calc.exName(x.e)) + '</b>' +
+        (xi > 0 ? '<button class="hv-ib" data-pa="xup" data-xi="' + xi + '" aria-label="Sposta su">' + UI.icon('up', 20) + '</button>' : '') +
+        '<button class="hv-ib" data-pa="xdel" data-xi="' + xi + '" aria-label="Togli esercizio">' + UI.icon('trash', 20) + '</button></div>' +
+        '<button class="hv-rest" data-pa="rest" data-xi="' + xi + '">' + ic('timer', 20) + ' Riposo: ' + esc(x.rest > 0 ? restStr(x.rest) : 'DISATTIVO') + '</button>' +
+        '<div ' + f(' head', '') + '><span>Serie</span><span class="center">Kg</span><span class="center">' + (x.range ? 'Rip. min' : 'Ripetizioni') + '</span>' + (x.range ? '<span class="center">Rip. max</span>' : '') + '<span></span></div>' +
+        x.rows.map((r, ri) => {
+          const ls = lp ? lp.sets[Math.min(ri, lp.sets.length - 1)] : null, lab = rowLab(r, () => ++nn);
+          return '<div ' + f('', ' data-xi="' + xi + '" data-ri="' + ri + '"') + '><button class="setn' + (r.t ? ' t-' + r.t : '') + '" data-pa="rtype" aria-label="Tipo di serie: tocca per cambiare">' + lab + '</button>' +
+            '<input class="inp" inputmode="decimal" data-rf="w" placeholder="' + esc(ls ? num(ls.w) : 'kg') + '" value="' + esc(r.w === '' || r.w == null ? '' : num(r.w)) + '" aria-label="Kg serie ' + (ri + 1) + '">' +
+            '<input class="inp" inputmode="numeric" data-rf="r" placeholder="8" value="' + esc(r.r || '') + '" aria-label="Ripetizioni serie ' + (ri + 1) + '">' +
+            (x.range ? '<input class="inp" inputmode="numeric" data-rf="rx" placeholder="12" value="' + esc(r.rx || '') + '" aria-label="Ripetizioni massime serie ' + (ri + 1) + '">' : '') +
+            '<button class="hv-ib" data-pa="rdel" aria-label="Togli serie ' + (ri + 1) + '">' + UI.icon('close', 18) + '</button></div>';
+        }).join('') +
+        '<div class="hv-addrow"><button class="hv-add" data-pa="radd" data-xi="' + xi + '">＋ Aggiungi serie</button><button class="hv-add" style="flex:0 0 auto;width:auto;padding:0 14px" data-pa="range" data-xi="' + xi + '">' + (x.range ? 'Rip. fisse' : 'Intervallo') + '</button></div></section>';
+    }
     function draw() {
       sh.set(UI.field('Nome della routine', UI.inp({ id: 'de-n', value: draft.n, ph: 'es. Push' })) +
         '<div class="field-l">Cartella: ' + esc(prog.n) + '</div>' +
-        draft.ex.map((x, xi) => '<section class="card tight"><div class="row between mb8"><b class="small" style="line-height:1.2">' + esc(Calc.exName(x.e)) + '</b><span class="row">' +
-          (xi > 0 ? '<button class="icon-btn sm" data-pa="xup" data-xi="' + xi + '" aria-label="Sposta su">' + UI.icon('up', 18) + '</button>' : '') +
-          '<button class="icon-btn sm" data-pa="xdel" data-xi="' + xi + '" aria-label="Togli">' + UI.icon('close', 18) + '</button></span></div>' +
-          '<div class="setrow" style="' + grid + ';font-size:11px;color:var(--tx2);text-transform:uppercase"><span></span><span class="center">Serie</span><span class="center">Min</span><span class="center">Max</span><span class="center">Rec s</span></div>' +
-          '<div class="setrow" style="' + grid + '"><span></span>' + ['sets', 'rmin', 'rmax', 'rest'].map(f => nI('data-pf="' + f + '" data-xi="' + xi + '"', x[f])).join('') + '</div></section>').join('') +
+        draft.ex.map(exCard).join('') +
+        (draft.ex.length ? '<p class="xs mut mb8">Lascia i kg vuoti per ripartire dall\'ultimo allenamento. Tocca il numero della serie per Riscaldamento, Drop set o Cedimento.</p>' : '') +
         '<button class="hv-go big" data-pa="xadd">＋ Aggiungi esercizio</button>' +
         '<button class="btn primary block mt12" data-pa="save">Salva</button>');
     }
     draw();
     const readName = () => { const n = sh.body.querySelector('#de-n'); if (n) draft.n = n.value; };
-    sh.body.addEventListener('change', e => {
+    sh.body.addEventListener('input', e => {
       const t = e.target;
       if (t.id === 'de-n') { draft.n = t.value; return; }
-      const f = t.dataset.pf; if (!f) return;
-      const x = draft.ex[+t.dataset.xi]; const v = parseInt(t.value, 10);
-      if (f === 'rest') { x.rest = isFinite(v) && v >= 0 ? v : x.rest; }
-      else x[f] = isFinite(v) && v > 0 ? v : x[f];
-      if (f === 'rmin' && x.rmax < x.rmin) x.rmax = x.rmin;
-      t.value = x[f];
+      const fld = t.dataset.rf; if (!fld) return;
+      const row = t.closest('[data-ri]'), r = draft.ex[+row.dataset.xi].rows[+row.dataset.ri], raw = t.value.trim();
+      if (fld === 'w') { const v = raw === '' ? NaN : UI.parseNum(raw); r.w = isFinite(v) && v >= 0 ? v : ''; }
+      else { const v = parseInt(raw, 10); r[fld] = isFinite(v) && v > 0 ? v : ''; }
     });
     sh.body.addEventListener('click', e => {
       const b = e.target.closest('[data-pa]'); if (!b) return;
       const a = b.dataset.pa; readName();
-      if (a === 'xdel') { draft.ex.splice(+b.dataset.xi, 1); draw(); }
+      const row = b.closest('[data-ri]');
+      if (a === 'rtype') { const r = draft.ex[+row.dataset.xi].rows[+row.dataset.ri]; r.t = { '': 'w', w: 'd', d: 'f', f: '' }[r.t || '']; draw(); }
+      else if (a === 'rdel') { const x = draft.ex[+row.dataset.xi]; if (x.rows.length > 1) { x.rows.splice(+row.dataset.ri, 1); draw(); } else UI.toast('Serve almeno una serie: per togliere l\'esercizio usa il cestino'); }
+      else if (a === 'radd') { const x = draft.ex[+b.dataset.xi], l = x.rows[x.rows.length - 1]; x.rows.push({ w: l.w, r: l.r, rx: l.rx, t: '' }); draw(); }
+      else if (a === 'range') { const x = draft.ex[+b.dataset.xi]; x.range = !x.range; draw(); }
+      else if (a === 'rest') {
+        const x = draft.ex[+b.dataset.xi];
+        const ms = UI.sheet({ title: 'Recupero', cls: 'small', html: '<div class="hv-menu">' + [0, 30, 45, 60, 90, 120, 150, 180, 240, 300].map(s => '<button class="hv-mi' + (s === x.rest ? ' on' : '') + '" data-s="' + s + '">' + restStr(s) + '</button>').join('') + '</div>' });
+        ms.body.addEventListener('click', ev => { const o = ev.target.closest('[data-s]'); if (o) { x.rest = +o.dataset.s; ms.close(); draw(); } });
+      }
+      else if (a === 'xdel') { draft.ex.splice(+b.dataset.xi, 1); draw(); }
       else if (a === 'xup') { const i = +b.dataset.xi; if (i > 0) { [draft.ex[i - 1], draft.ex[i]] = [draft.ex[i], draft.ex[i - 1]]; draw(); } }
-      else if (a === 'xadd') pickExercise(ex => { draft.ex.push({ e: ex.id, sets: 1, rmin: 8, rmax: 12, rest: 90 }); draw(); });
+      else if (a === 'xadd') pickExercise(ex => { draft.ex.push(normEx({ e: ex.id, sets: 3, rmin: 8, rmax: 8, rest: 90 })); draw(); });
       else if (a === 'save') {
         if (!draft.n.trim()) return UI.toast('Dai un nome alla routine');
         if (!draft.ex.length) return UI.toast('Aggiungi almeno un esercizio');
+        draft.ex.forEach(syncEx);
         draft.n = draft.n.trim();
         if (S().programs.indexOf(prog) < 0) S().programs.push(prog);
         const i = prog.days.findIndex(d => d.id === draft.id);

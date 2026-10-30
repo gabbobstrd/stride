@@ -561,3 +561,4 @@ body.timer-on .notch { bottom: calc(var(--tab) + var(--sab) + 82px); }
 .notch-x { color: #8E8E93; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.notch-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 110px); }
 body.notch-on.timer-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 190px); }
+.setrow.hs.ed { grid-template-columns: 34px 1fr 1fr 40px; } .setrow.hs.ed.rg { grid-template-columns: 34px 1fr 1fr 1fr 40px; }
