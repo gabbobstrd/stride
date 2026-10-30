@@ -561,7 +561,25 @@ body.timer-on .notch { bottom: calc(var(--tab) + var(--sab) + 82px); }
 .notch-x { color: #8E8E93; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.notch-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 110px); }
 body.notch-on.timer-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 190px); }
-.setrow.hs.ed { grid-template-columns: 34px 1fr 1fr 40px; } .setrow.hs.ed.rg { grid-template-columns: 34px 1fr 1fr 1fr 40px; }
+/* tabella e editor della routine come Hevy: niente riquadri, righe alternate a tutta larghezza */
+.hv-rw { position: relative; overflow: hidden; display: grid; grid-template-columns: 66px 100px 110px 1fr; align-items: center; justify-items: center; min-height: 52px; margin: 0 -16px; font-size: 17px; color: #fff; }
+.hv-rw.alt { background: #1C1C1E; }
+.hv-rw.head { min-height: 32px; font-size: 13px; color: #8E8E93; text-transform: uppercase; letter-spacing: .02em; }
+.hv-rw .setn { min-height: 44px; width: 100%; display: grid; place-items: center; background: none; font-size: 17px; font-weight: 700; color: #fff; }
+.hv-rw .setn.t-w { color: var(--warn); } .hv-rw .setn.t-d { color: var(--supp); } .hv-rw .setn.t-f { color: var(--bad); }
+.hv-rw input { width: 100%; min-height: 44px; min-width: 0; padding: 0; border: 0; border-radius: 8px; outline: 0; background: transparent; color: #fff; font: inherit; text-align: center; }
+.hv-rw input::placeholder { color: #8E8E93; opacity: 1; }
+.hv-rw input:focus { background: #2C2C2E; }
+.hv-rcell { display: flex; align-items: center; width: 100%; } .hv-rcell i { font-style: normal; color: #8E8E93; padding: 0 2px; }
+.hv-rhd { min-height: 32px; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; white-space: nowrap; }
+.hv-rdel { position: absolute; top: 0; right: 0; bottom: 0; width: 96px; background: #FF3B30; color: #fff; font-size: 16px; font-weight: 600; transform: translateX(100%); transition: transform .18s; }
+.hv-rw.sw .hv-rdel { transform: translateX(0); }
+.hv-rw + .hv-add { margin-top: 12px; }
+.hv-tin { display: block; width: 100%; min-height: 52px; padding: 0; border: 0; outline: 0; background: transparent; color: #fff; font: inherit; font-size: 24px; font-weight: 600; border-bottom: 1px solid #1C1C1E; margin-bottom: 8px; }
+.hv-tin::placeholder { color: #8E8E93; opacity: 1; }
+.hv-sh { padding: 2px 16px; } .hv-sh .sheet-t { position: absolute; left: 90px; right: 90px; text-align: center; padding: 0; } .hv-sh .hv-lnk.b { font-weight: 600; }
+.hv-sh .hv-lnk { position: relative; }
+.hv-ib { font-size: 22px; }
 .hv-prog { font-size: 14px; font-weight: 600; line-height: 1.3; padding: 8px 10px; margin: 2px 0 8px; border-radius: 10px; background: #1C1C1E; color: #8E8E93; }
 .hv-prog small { display: block; font-weight: 500; font-size: 12.5px; color: #8E8E93; margin-top: 2px; }
 .hv-prog.up { color: #34C759; background: rgba(52, 199, 89, .12); }

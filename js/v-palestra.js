@@ -341,12 +341,12 @@
         const ls = lp ? lp.sets[Math.min(i, lp.sets.length - 1)] : null, rw = rr ? rr[i] : null;
         const kg = rw ? (rw.w !== '' && rw.w != null ? kgS(rw.w) : '–') : (ls ? kgS(ls.w) : '–');
         const rp = rw ? (+rw.r > 0 ? rw.r + (+rw.rx > +rw.r ? '–' + rw.rx : '') : '–') : (pe.rmin ? pe.rmin + (pe.rmax !== pe.rmin ? '–' + pe.rmax : '') : '–');
-        rows += '<div class="hv-tr"><span>' + (rw ? rowLab(rw, () => ++nn) : (i + 1)) + '</span><span>' + kg + '</span><span>' + rp + '</span></div>';
+        rows += '<div class="hv-rw' + (i % 2 ? ' alt' : '') + '"><span class="setn' + (rw && rw.t ? ' t-' + rw.t : '') + '">' + (rw ? rowLab(rw, () => ++nn) : (i + 1)) + '</span><span>' + kg + '</span><span>' + rp + '</span></div>';
       }
       const pr = Calc.exProgress(pe.e);
       return '<div><div class="hv-exh">' + circle(pe.e) + '<button class="hv-exn" data-ex="' + esc(pe.e) + '">' + esc(Calc.exName(pe.e)) + (pe.e.indexOf('x_') === 0 ? '<span class="hv-tag">Personalizzato</span>' : '') + '</button></div>' +
         (pr && pr.vsPrev ? progLine(pr.vsPrev) : '') +
-        '<div class="hv-tr head"><span>Serie</span><span>Kg</span><span>Ripetizioni</span></div>' + rows + '</div>';
+        '<div class="hv-rw head"><span>Serie</span><span>Kg</span><span>Ripetizioni</span></div>' + rows + '</div>';
     }
     sh.set('<h2 class="hv-h2">' + esc(d.n.toUpperCase()) + '</h2><p class="hv-sub">Cartella: ' + esc(p.n) + '</p>' +
       '<button class="hv-go big" id="rd-go">Avvia la routine</button>' +
@@ -409,35 +409,63 @@
   function dayEditor(prog, day, isNew) {
     const draft = JSON.parse(JSON.stringify(day));
     draft.ex.forEach(normEx);
-    const sh = UI.sheet({ title: isNew ? 'Nuova routine' : 'Modifica la routine', cls: 'tall' });
+    const sh = UI.sheet({ title: isNew ? 'Crea routine' : 'Modifica routine', cls: 'tall' });
+    /* barra in alto come Hevy: Annulla, titolo, Salva */
+    const head = sh.el.querySelector('.sheet-h'), closeB = head.querySelector('[data-sheet-close]');
+    head.classList.add('hv-sh');
+    closeB.className = 'hv-lnk'; closeB.textContent = 'Annulla';
+    head.insertAdjacentHTML('beforeend', '<button class="hv-lnk b" data-pa="save">Salva</button>');
     function exCard(x, xi) {
-      const lp = Calc.lastPerformance(x.e);
-      const f = (cl, ph) => 'class="setrow hs ed' + (x.range ? ' rg' : '') + cl + '"' + ph;
       let nn = 0;
       return '<section class="hv-ex"><div class="hv-exh">' + circle(x.e) + '<b class="hv-exn" style="flex:1">' + esc(Calc.exName(x.e)) + '</b>' +
-        (xi > 0 ? '<button class="hv-ib" data-pa="xup" data-xi="' + xi + '" aria-label="Sposta su">' + UI.icon('up', 20) + '</button>' : '') +
-        '<button class="hv-ib" data-pa="xdel" data-xi="' + xi + '" aria-label="Togli esercizio">' + UI.icon('trash', 20) + '</button></div>' +
-        '<button class="hv-rest" data-pa="rest" data-xi="' + xi + '">' + ic('timer', 20) + ' Riposo: ' + esc(x.rest > 0 ? restStr(x.rest) : 'DISATTIVO') + '</button>' +
-        '<div ' + f(' head', '') + '><span>Serie</span><span class="center">Kg</span><span class="center">' + (x.range ? 'Rip. min' : 'Ripetizioni') + '</span>' + (x.range ? '<span class="center">Rip. max</span>' : '') + '<span></span></div>' +
+        '<button class="hv-ib" data-pa="xmenu" data-xi="' + xi + '" aria-label="Opzioni esercizio">⋮</button></div>' +
+        '<button class="hv-rest" data-pa="rest" data-xi="' + xi + '">' + ic('timer', 20) + ' Timer di riposo: ' + esc(x.rest > 0 ? restStr(x.rest) : 'DISATTIVO') + '</button>' +
+        '<div class="hv-rw head"><span>Serie</span><span>Kg</span><button class="hv-rhd" data-pa="range" data-xi="' + xi + '">' + (x.range ? 'Intervallo' : 'Ripetizioni') + ' ▾</button></div>' +
         x.rows.map((r, ri) => {
-          const ls = lp ? lp.sets[Math.min(ri, lp.sets.length - 1)] : null, lab = rowLab(r, () => ++nn);
-          return '<div ' + f('', ' data-xi="' + xi + '" data-ri="' + ri + '"') + '><button class="setn' + (r.t ? ' t-' + r.t : '') + '" data-pa="rtype" aria-label="Tipo di serie: tocca per cambiare">' + lab + '</button>' +
-            '<input class="inp" inputmode="decimal" data-rf="w" placeholder="' + esc(ls ? num(ls.w) : 'kg') + '" value="' + esc(r.w === '' || r.w == null ? '' : num(r.w)) + '" aria-label="Kg serie ' + (ri + 1) + '">' +
-            '<input class="inp" inputmode="numeric" data-rf="r" placeholder="rip" value="' + esc(r.r || '') + '" aria-label="Ripetizioni serie ' + (ri + 1) + '">' +
-            (x.range ? '<input class="inp" inputmode="numeric" data-rf="rx" placeholder="12" value="' + esc(r.rx || '') + '" aria-label="Ripetizioni massime serie ' + (ri + 1) + '">' : '') +
-            '<button class="hv-ib" data-pa="rdel" aria-label="Togli serie ' + (ri + 1) + '">' + UI.icon('close', 18) + '</button></div>';
+          const lab = rowLab(r, () => ++nn);
+          return '<div class="hv-rw' + (ri % 2 ? ' alt' : '') + '" data-xi="' + xi + '" data-ri="' + ri + '"><button class="setn' + (r.t ? ' t-' + r.t : '') + '" data-pa="rtype" aria-label="Tipo di serie: tocca per cambiare">' + lab + '</button>' +
+            '<input inputmode="decimal" data-rf="w" placeholder="-" value="' + esc(r.w === '' || r.w == null ? '' : num(r.w)) + '" aria-label="Kg serie ' + (ri + 1) + '">' +
+            '<span class="hv-rcell"><input inputmode="numeric" data-rf="r" placeholder="-" value="' + esc(r.r || '') + '" aria-label="Ripetizioni serie ' + (ri + 1) + '">' +
+            (x.range ? '<i>–</i><input inputmode="numeric" data-rf="rx" placeholder="-" value="' + esc(r.rx || '') + '" aria-label="Ripetizioni massime serie ' + (ri + 1) + '">' : '') + '</span>' +
+            '<button class="hv-rdel" data-pa="rdel" aria-label="Elimina serie ' + (ri + 1) + '">Elimina</button></div>';
         }).join('') +
-        '<div class="hv-addrow"><button class="hv-add" data-pa="radd" data-xi="' + xi + '">＋ Aggiungi serie</button><button class="hv-add" style="flex:0 0 auto;width:auto;padding:0 14px" data-pa="range" data-xi="' + xi + '">' + (x.range ? 'Rip. fisse' : 'Intervallo') + '</button></div></section>';
+        '<button class="hv-add" data-pa="radd" data-xi="' + xi + '">＋ Aggiungi serie</button></section>';
     }
     function draw() {
-      sh.set(UI.field('Nome della routine', UI.inp({ id: 'de-n', value: draft.n, ph: 'es. Push' })) +
-        '<div class="field-l">Cartella: ' + esc(prog.n) + '</div>' +
-        draft.ex.map(exCard).join('') +
-        (draft.ex.length ? '<p class="xs mut mb8">Lascia i kg vuoti per ripartire dall\'ultimo allenamento. Tocca il numero della serie per Riscaldamento, Drop set o Cedimento.</p>' : '') +
-        '<button class="hv-go big" data-pa="xadd">＋ Aggiungi esercizio</button>' +
-        '<button class="btn primary block mt12" data-pa="save">Salva</button>');
+      sh.set('<input class="hv-tin" id="de-n" value="' + esc(draft.n) + '" placeholder="Titolo della routine" aria-label="Titolo della routine">' +
+        (draft.ex.length ? draft.ex.map(exCard).join('') : '<p class="hv-empty">Inizia aggiungendo un esercizio alla routine.</p>') +
+        '<button class="hv-go big" data-pa="xadd">＋ Aggiungi esercizio</button>');
+    }
+    function delRow(xi, ri) {
+      const x = draft.ex[xi];
+      if (x.rows.length > 1) { x.rows.splice(ri, 1); draw(); } else UI.toast('Serve almeno una serie: per togliere l\'esercizio usa ⋮');
+    }
+    function menu(title, items, cb) {
+      const ms = UI.sheet({ title, cls: 'small', html: '<div class="hv-menu">' + items.map(m => '<button class="hv-mi' + (m[2] || '') + '" data-k="' + m[0] + '">' + m[1] + '</button>').join('') + '</div>' });
+      ms.body.addEventListener('click', ev => { const o = ev.target.closest('[data-k]'); if (o) { ms.close(); cb(o.dataset.k); } });
     }
     draw();
+    /* scorri a sinistra su una serie per far comparire Elimina, come in Hevy */
+    let tx = 0, ty = 0, trow = null;
+    sh.body.addEventListener('touchstart', e => { const t = e.touches[0]; tx = t.clientX; ty = t.clientY; trow = e.target.closest('.hv-rw[data-ri]'); }, { passive: true });
+    sh.body.addEventListener('touchend', e => {
+      const t = e.changedTouches[0], dx = t.clientX - tx, dy = Math.abs(t.clientY - ty);
+      if (!trow || dy > 30 || Math.abs(dx) < 50) return;
+      sh.body.querySelectorAll('.hv-rw.sw').forEach(r => { if (r !== trow) r.classList.remove('sw'); });
+      trow.classList.toggle('sw', dx < 0);
+    }, { passive: true });
+    head.querySelector('[data-pa="save"]').addEventListener('click', () => {
+      readName();
+      if (!draft.n.trim()) return UI.toast('Dai un nome alla routine');
+      if (!draft.ex.length) return UI.toast('Aggiungi almeno un esercizio');
+      draft.ex.forEach(syncEx);
+      draft.n = draft.n.trim();
+      if (S().programs.indexOf(prog) < 0) S().programs.push(prog);
+      const i = prog.days.findIndex(d => d.id === draft.id);
+      if (i >= 0) prog.days[i] = draft; else prog.days.push(draft);
+      if (!S().activeProgram) { S().activeProgram = prog.id; S().nextDayIdx = 0; }
+      Store.change(); sh.close(); UI.refresh(); UI.toast('Routine salvata');
+    });
     const readName = () => { const n = sh.body.querySelector('#de-n'); if (n) draft.n = n.value; };
     sh.body.addEventListener('input', e => {
       const t = e.target;
@@ -451,29 +479,31 @@
       const b = e.target.closest('[data-pa]'); if (!b) return;
       const a = b.dataset.pa; readName();
       const row = b.closest('[data-ri]');
-      if (a === 'rtype') { const r = draft.ex[+row.dataset.xi].rows[+row.dataset.ri]; r.t = { '': 'w', w: 'd', d: 'f', f: '' }[r.t || '']; draw(); }
-      else if (a === 'rdel') { const x = draft.ex[+row.dataset.xi]; if (x.rows.length > 1) { x.rows.splice(+row.dataset.ri, 1); draw(); } else UI.toast('Serve almeno una serie: per togliere l\'esercizio usa il cestino'); }
+      if (a === 'rtype') {
+        const xi = +row.dataset.xi, ri = +row.dataset.ri, r = draft.ex[xi].rows[ri], cur = r.t || 'n';
+        menu('Tipo di serie', [['n', 'Normale'], ['w', 'Riscaldamento'], ['d', 'Drop set'], ['f', 'Cedimento'], ['del', 'Elimina serie', ' dg']].map(m => m[0] === cur ? [m[0], m[1], ' on'] : m), k => {
+          if (k === 'del') delRow(xi, ri); else { r.t = k === 'n' ? '' : k; draw(); }
+        });
+      }
+      else if (a === 'rdel') delRow(+row.dataset.xi, +row.dataset.ri);
       else if (a === 'radd') { const x = draft.ex[+b.dataset.xi], l = x.rows[x.rows.length - 1]; x.rows.push({ w: l.w, r: l.r, rx: l.rx, t: '' }); draw(); }
-      else if (a === 'range') { const x = draft.ex[+b.dataset.xi]; x.range = !x.range; draw(); }
+      else if (a === 'range') {
+        const x = draft.ex[+b.dataset.xi];
+        menu('Ripetizioni', [['0', 'Ripetizioni', x.range ? '' : ' on'], ['1', 'Intervallo di ripetizioni', x.range ? ' on' : '']], k => { x.range = k === '1'; draw(); });
+      }
+      else if (a === 'xmenu') {
+        const i = +b.dataset.xi;
+        menu(Calc.exName(draft.ex[i].e), (i > 0 ? [['up', 'Sposta su']] : []).concat([['del', 'Togli esercizio', ' dg']]), k => {
+          if (k === 'del') draft.ex.splice(i, 1); else [draft.ex[i - 1], draft.ex[i]] = [draft.ex[i], draft.ex[i - 1]];
+          draw();
+        });
+      }
       else if (a === 'rest') {
         const x = draft.ex[+b.dataset.xi];
         const ms = UI.sheet({ title: 'Recupero', cls: 'small', html: '<div class="hv-menu">' + [0, 30, 45, 60, 90, 120, 150, 180, 240, 300].map(s => '<button class="hv-mi' + (s === x.rest ? ' on' : '') + '" data-s="' + s + '">' + restStr(s) + '</button>').join('') + '</div>' });
         ms.body.addEventListener('click', ev => { const o = ev.target.closest('[data-s]'); if (o) { x.rest = +o.dataset.s; ms.close(); draw(); } });
       }
-      else if (a === 'xdel') { draft.ex.splice(+b.dataset.xi, 1); draw(); }
-      else if (a === 'xup') { const i = +b.dataset.xi; if (i > 0) { [draft.ex[i - 1], draft.ex[i]] = [draft.ex[i], draft.ex[i - 1]]; draw(); } }
       else if (a === 'xadd') pickExercise(ex => { draft.ex.push(normEx({ e: ex.id, sets: 3, rmin: 0, rmax: 0, rest: 90 })); draw(); });
-      else if (a === 'save') {
-        if (!draft.n.trim()) return UI.toast('Dai un nome alla routine');
-        if (!draft.ex.length) return UI.toast('Aggiungi almeno un esercizio');
-        draft.ex.forEach(syncEx);
-        draft.n = draft.n.trim();
-        if (S().programs.indexOf(prog) < 0) S().programs.push(prog);
-        const i = prog.days.findIndex(d => d.id === draft.id);
-        if (i >= 0) prog.days[i] = draft; else prog.days.push(draft);
-        if (!S().activeProgram) { S().activeProgram = prog.id; S().nextDayIdx = 0; }
-        Store.change(); sh.close(); UI.refresh(); UI.toast('Routine salvata');
-      }
     });
   }
   function newDay() { return { id: Store.uid('d'), n: '', ex: [] }; }
