@@ -136,7 +136,7 @@
     if (prog && prog.days[dayIdx]) {
       const day = prog.days[dayIdx];
       sess.prog = prog.id; sess.day = day.id; sess.name = day.n;
-      sess.ex = day.ex.map(pe => mkEx(pe.e, { sets: pe.sets, rmin: pe.rmin, rmax: pe.rmax, rest: pe.rest }, pe.rows));
+      sess.ex = day.ex.map(pe => { const e = mkEx(pe.e, { sets: pe.sets, rmin: pe.rmin, rmax: pe.rmax, rest: pe.rest }, pe.rows); if (pe.note) e.note = pe.note; return e; });
     }
     S().activeSession = sess;
     Store.change();
@@ -345,6 +345,7 @@
       }
       const pr = Calc.exProgress(pe.e);
       return '<div><div class="hv-exh">' + circle(pe.e) + '<button class="hv-exn" data-ex="' + esc(pe.e) + '">' + esc(Calc.exName(pe.e)) + (pe.e.indexOf('x_') === 0 ? '<span class="hv-tag">Personalizzato</span>' : '') + '</button></div>' +
+        (pe.note ? '<p class="hv-rnote">' + esc(pe.note) + '</p>' : '') +
         (pr && pr.vsPrev ? progLine(pr.vsPrev) : '') +
         '<div class="hv-rw head"><span>Serie</span><span>Kg</span><span>Ripetizioni</span></div>' + rows + '</div>';
     }
@@ -419,6 +420,7 @@
       let nn = 0;
       return '<section class="hv-ex"><div class="hv-exh">' + circle(x.e) + '<b class="hv-exn" style="flex:1">' + esc(Calc.exName(x.e)) + '</b>' +
         '<button class="hv-ib" data-pa="xmenu" data-xi="' + xi + '" aria-label="Opzioni esercizio">⋮</button></div>' +
+        '<div class="exnote"><textarea class="inp" rows="1" data-xn="' + xi + '" placeholder="Aggiungi note alla routine qui" aria-label="Nota esercizio">' + esc(x.note || '') + '</textarea></div>' +
         '<button class="hv-rest" data-pa="rest" data-xi="' + xi + '">' + ic('timer', 20) + ' Timer di riposo: ' + esc(x.rest > 0 ? restStr(x.rest) : 'DISATTIVO') + '</button>' +
         '<div class="hv-rw head"><span>Serie</span><span>Kg</span><button class="hv-rhd" data-pa="range" data-xi="' + xi + '">' + (x.range ? 'Intervallo' : 'Ripetizioni') + ' ▾</button></div>' +
         x.rows.map((r, ri) => {
@@ -470,6 +472,7 @@
     sh.body.addEventListener('input', e => {
       const t = e.target;
       if (t.id === 'de-n') { draft.n = t.value; return; }
+      if (t.dataset.xn) { draft.ex[+t.dataset.xn].note = t.value.trim(); return; }
       const fld = t.dataset.rf; if (!fld) return;
       const row = t.closest('[data-ri]'), r = draft.ex[+row.dataset.xi].rows[+row.dataset.ri], raw = t.value.trim();
       if (fld === 'w') { const v = raw === '' ? NaN : UI.parseNum(raw); r.w = isFinite(v) && v >= 0 ? v : ''; }
