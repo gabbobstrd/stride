@@ -150,7 +150,7 @@
     /* trascinamento verso il basso dall'intestazione */
     let y0 = null, dy = 0;
     const head = sh.querySelector('.sheet-grab'), head2 = sh.querySelector('.sheet-h');
-    [head, head2].forEach(h => {
+    if (!o.page) [head, head2].forEach(h => {
       h.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; dy = 0; sh.style.transition = 'none'; }, { passive: true });
       h.addEventListener('touchmove', e => { if (y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = 'translateY(' + dy + 'px)'; }, { passive: true });
       h.addEventListener('touchend', () => {

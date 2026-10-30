@@ -562,7 +562,7 @@ body.timer-on .notch { bottom: calc(var(--tab) + var(--sab) + 82px); }
 body.notch-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 110px); }
 body.notch-on.timer-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 190px); }
 /* tabella e editor della routine come Hevy: niente riquadri, righe alternate a tutta larghezza */
-.hv-rw { position: relative; overflow: hidden; display: grid; grid-template-columns: 66px 100px 110px 1fr; align-items: center; justify-items: center; min-height: 52px; margin: 0 -16px; font-size: 17px; color: #fff; }
+.hv-rw { position: relative; display: grid; grid-template-columns: 56px 102px 110px 1fr; align-items: center; justify-items: center; min-height: 49px; margin: 0 -16px; font-size: 16px; color: #fff; background: #000; transition: transform .18s; }
 .hv-rw.alt { background: #1C1C1E; }
 .hv-rw.head { min-height: 32px; font-size: 13px; color: #8E8E93; text-transform: uppercase; letter-spacing: .02em; }
 .hv-rw .setn { min-height: 44px; width: 100%; display: grid; place-items: center; background: none; font-size: 17px; font-weight: 700; color: #fff; }
@@ -572,13 +572,11 @@ body.notch-on.timer-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) 
 .hv-rw input:focus { background: #2C2C2E; }
 .hv-rcell { display: flex; align-items: center; width: 100%; } .hv-rcell i { font-style: normal; color: #8E8E93; padding: 0 2px; }
 .hv-rhd { min-height: 32px; color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; white-space: nowrap; }
-.hv-rdel { position: absolute; top: 0; right: 0; bottom: 0; width: 96px; background: #FF3B30; color: #fff; font-size: 16px; font-weight: 600; transform: translateX(100%); transition: transform .18s; }
-.hv-rw.sw .hv-rdel { transform: translateX(0); }
+.hv-rdel { position: absolute; top: 0; right: -96px; bottom: 0; width: 96px; background: #FF3B30; color: #fff; font-size: 16px; font-weight: 600; }
+.hv-rw.sw { transform: translateX(-96px); }
 .hv-rw + .hv-add { margin-top: 12px; }
-.hv-tin { display: block; width: 100%; min-height: 52px; padding: 0; border: 0; outline: 0; background: transparent; color: #fff; font: inherit; font-size: 24px; font-weight: 600; border-bottom: 1px solid #1C1C1E; margin-bottom: 8px; }
+.hv-tin { display: block; width: 100%; min-height: 52px; padding: 0; border: 0; outline: 0; background: transparent; color: #fff; font: inherit; font-size: 18px; font-weight: 500; }
 .hv-tin::placeholder { color: #8E8E93; opacity: 1; }
-.hv-sh { padding: 2px 16px; } .hv-sh .sheet-t { position: absolute; left: 90px; right: 90px; text-align: center; padding: 0; } .hv-sh .hv-lnk.b { font-weight: 600; }
-.hv-sh .hv-lnk { position: relative; }
 .hv-ib { font-size: 22px; }
 .hv-prog { font-size: 14px; font-weight: 600; line-height: 1.3; padding: 8px 10px; margin: 2px 0 8px; border-radius: 10px; background: #1C1C1E; color: #8E8E93; }
 .hv-prog small { display: block; font-weight: 500; font-size: 12.5px; color: #8E8E93; margin-top: 2px; }
@@ -587,3 +585,22 @@ body.notch-on.timer-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) 
 .hv-tag { display: table; margin-top: 4px; padding: 2px 8px; border-radius: 7px; background: #2C2C2E; color: #fff; font-size: 12.5px; font-weight: 500; }
 .hv-progrow { border-bottom: 1px solid #2C2C2E; padding-bottom: 4px; }
 .hv-rnote { color: #8E8E93; font-size: 15px; line-height: 1.35; margin: 0 0 6px; white-space: pre-wrap; }
+/* editor e dettaglio routine a pagina intera, come Hevy */
+.sheet.hv-page { top: 0; height: 100vh; height: 100dvh; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
+.sheet.hv-page:not(.open) { transform: translateX(104%); }
+.hv-page .sheet-grab { display: none; }
+.hv-page .sheet-h { position: relative; background: #1C1C1E; padding: var(--sat) 8px 0; min-height: calc(var(--sat) + 52px); }
+.hv-page .sheet-t { position: absolute; left: 96px; right: 96px; text-align: center; font-size: 17px; font-weight: 500; padding: 0; }
+.hv-page .sheet-h > .hv-lnk { padding: 0 8px; }
+.hv-save { min-height: 36px; padding: 0 14px; border-radius: 8px; background: #3B82F6; color: #fff; font-size: 15px; font-weight: 500; }
+.hv-page .sheet-b { overflow-x: hidden; padding-top: 8px; }
+.hv-tbox { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #2C2C2E; margin-bottom: 12px; }
+.hv-tclr { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #48484A; color: #000; }
+.hv-page .hv-ci { width: 38px; height: 38px; }
+.hv-page .hv-exn { font-weight: 500; }
+.hv-page .exnote { margin: 0; }
+body.hv .hv-page .exnote .inp { font-size: 16px; padding: 4px 0; min-height: 32px; }
+.hv-page .exnote .inp::placeholder { color: #8E8E93; }
+.hv-page .hv-rest { font-weight: 400; font-size: 16px; }
+.hv-page .hv-add { font-weight: 500; font-size: 16px; }
+.hv-title { font-size: 22px; font-weight: 600; letter-spacing: 0; margin: 2px 0 14px; }
