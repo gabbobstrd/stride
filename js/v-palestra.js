@@ -266,6 +266,7 @@
     h += '<div class="exnote"><textarea class="inp" rows="1" data-ch="pal.exNote" data-ei="' + ei + '" placeholder="Aggiungi note qui…" aria-label="Nota esercizio">' + esc(e.note || '') + '</textarea>' + (e.note ? '<button class="link" data-act="pal.pin" data-ei="' + ei + '">📌 fissa</button>' : '') + '</div>';
     h += '<button class="hv-rest" data-act="pal.restPick" data-ei="' + ei + '">' + ic('timer', 20) + ' Riposo: ' + esc(restOf(e.plan) > 0 ? restStr(restOf(e.plan)) : 'DISATTIVO') + '</button>';
     if (undo && undo.ei === ei) h += '<div class="sug undo">Segnate ' + undo.n + ' serie <button class="link" data-act="pal.voiceUndo" data-ei="' + ei + '">Annulla</button></div>';
+    if (lp) { const sn = Calc.exSnap(lp); h += '<div class="hv-prog same">Ultima volta, ' + esc(UI.dateShort(sn.d)) + ': ' + kgS(sn.best.w) + ' kg × ' + sn.best.r + '</div>'; }
     if (pg) h += '<div class="hv-sug' + (pg.type === 'down' ? ' down' : '') + '">' + esc(pg.text) + '</div>';
     else if (!lp) h += '<div class="hv-sug none">Prima volta: parti leggero e annota come va.</div>';
     h += '<div class="setrow hs head' + (rpeOn ? ' r' : '') + '"><span>Serie</span><span>Precedente</span><span class="center">Kg</span><span class="center">Ripetizioni</span>' + (rpeOn ? '<span class="center">RPE</span>' : '') + '<span class="center">' + UI.icon('check', 16) + '</span></div>';
@@ -302,7 +303,7 @@
   }
   function homeHtml() {
     const progs = S().programs;
-    let h = '<h1 class="hv-title">Allenamento</h1><button class="hv-wide" data-act="pal.startFree">＋ Inizia un allenamento vuoto</button>';
+    let h = '<h1 class="hv-title">Allenamento</h1><button class="hv-wide" data-act="pal.startFree">＋ Inizia un allenamento vuoto</button><button class="hv-wide" data-act="pal.progress">📈 I miei progressi</button>';
     h += '<div class="hv-sec"><h2>Routine</h2><button class="hv-ib" data-act="pal.newProg" aria-label="Nuova cartella">' + ic('folder', 26) + '</button></div>';
     h += '<div class="hv-2"><button class="hv-wide half" data-act="pal.newRoutine">' + ic('clip', 22) + ' Nuova routine</button><button class="hv-wide half" data-act="pal.explore">' + ic('search', 22) + ' Esplora</button></div>';
     if (!progs.length) h += '<p class="hv-empty">Nessuna routine: creane una oppure copia un modello da «Esplora».</p>';
@@ -322,6 +323,9 @@
     const p = S().programs.find(x => x.id === pid); if (!p) return {};
     return { p, d: p.days.find(x => x.id === did), i: p.days.findIndex(x => x.id === did) };
   }
+  /* «+20% di peso rispetto alla settimana scorsa (23 ott)» */
+  const progLine = c => '<div class="hv-prog ' + c.type + '">' + (c.type === 'up' ? '📈 ' : c.type === 'down' ? '↘︎ ' : '＝ ') + esc(c.text) + ' rispetto ' + esc(c.when) + '<small>' + esc(c.line) + '</small></div>';
+  P.progLine = progLine;
   const rowLab = (rw, next) => rw.t === 'w' ? 'R' : rw.t === 'd' ? 'D' : rw.t === 'f' ? 'C' : String(next());
   function routineDetail(p, d) {
     const sh = UI.sheet({ title: 'Routine', cls: 'tall' });
@@ -335,12 +339,14 @@
       const rr = pe.rows && pe.rows.length ? pe.rows : null;
       for (let i = 0; i < (rr ? rr.length : (pe.sets || 3)); i++) {
         const ls = lp ? lp.sets[Math.min(i, lp.sets.length - 1)] : null, rw = rr ? rr[i] : null;
-        const kg = rw && rw.w !== '' && rw.w != null ? kgS(rw.w) : (ls ? kgS(ls.w) : '–');
-        const rp = rw && +rw.r > 0 ? rw.r + (+rw.rx > +rw.r ? '–' + rw.rx : '') : (pe.rmin ? pe.rmin + (pe.rmax !== pe.rmin ? '–' + pe.rmax : '') : '–');
+        const kg = rw ? (rw.w !== '' && rw.w != null ? kgS(rw.w) : '–') : (ls ? kgS(ls.w) : '–');
+        const rp = rw ? (+rw.r > 0 ? rw.r + (+rw.rx > +rw.r ? '–' + rw.rx : '') : '–') : (pe.rmin ? pe.rmin + (pe.rmax !== pe.rmin ? '–' + pe.rmax : '') : '–');
         rows += '<div class="hv-tr"><span>' + (rw ? rowLab(rw, () => ++nn) : (i + 1)) + '</span><span>' + kg + '</span><span>' + rp + '</span></div>';
       }
-      return '<div class="hv-exh">' + circle(pe.e) + '<button class="hv-exn" data-ex="' + esc(pe.e) + '">' + esc(Calc.exName(pe.e)) + '</button></div>' +
-        '<div class="hv-tr head"><span>Serie</span><span>Kg</span><span>Ripetizioni</span></div>' + rows;
+      const pr = Calc.exProgress(pe.e);
+      return '<div><div class="hv-exh">' + circle(pe.e) + '<button class="hv-exn" data-ex="' + esc(pe.e) + '">' + esc(Calc.exName(pe.e)) + (pe.e.indexOf('x_') === 0 ? '<span class="hv-tag">Personalizzato</span>' : '') + '</button></div>' +
+        (pr && pr.vsPrev ? progLine(pr.vsPrev) : '') +
+        '<div class="hv-tr head"><span>Serie</span><span>Kg</span><span>Ripetizioni</span></div>' + rows + '</div>';
     }
     sh.set('<h2 class="hv-h2">' + esc(d.n.toUpperCase()) + '</h2><p class="hv-sub">Cartella: ' + esc(p.n) + '</p>' +
       '<button class="hv-go big" id="rd-go">Avvia la routine</button>' +
@@ -417,7 +423,7 @@
           const ls = lp ? lp.sets[Math.min(ri, lp.sets.length - 1)] : null, lab = rowLab(r, () => ++nn);
           return '<div ' + f('', ' data-xi="' + xi + '" data-ri="' + ri + '"') + '><button class="setn' + (r.t ? ' t-' + r.t : '') + '" data-pa="rtype" aria-label="Tipo di serie: tocca per cambiare">' + lab + '</button>' +
             '<input class="inp" inputmode="decimal" data-rf="w" placeholder="' + esc(ls ? num(ls.w) : 'kg') + '" value="' + esc(r.w === '' || r.w == null ? '' : num(r.w)) + '" aria-label="Kg serie ' + (ri + 1) + '">' +
-            '<input class="inp" inputmode="numeric" data-rf="r" placeholder="8" value="' + esc(r.r || '') + '" aria-label="Ripetizioni serie ' + (ri + 1) + '">' +
+            '<input class="inp" inputmode="numeric" data-rf="r" placeholder="rip" value="' + esc(r.r || '') + '" aria-label="Ripetizioni serie ' + (ri + 1) + '">' +
             (x.range ? '<input class="inp" inputmode="numeric" data-rf="rx" placeholder="12" value="' + esc(r.rx || '') + '" aria-label="Ripetizioni massime serie ' + (ri + 1) + '">' : '') +
             '<button class="hv-ib" data-pa="rdel" aria-label="Togli serie ' + (ri + 1) + '">' + UI.icon('close', 18) + '</button></div>';
         }).join('') +
@@ -456,7 +462,7 @@
       }
       else if (a === 'xdel') { draft.ex.splice(+b.dataset.xi, 1); draw(); }
       else if (a === 'xup') { const i = +b.dataset.xi; if (i > 0) { [draft.ex[i - 1], draft.ex[i]] = [draft.ex[i], draft.ex[i - 1]]; draw(); } }
-      else if (a === 'xadd') pickExercise(ex => { draft.ex.push(normEx({ e: ex.id, sets: 3, rmin: 8, rmax: 8, rest: 90 })); draw(); });
+      else if (a === 'xadd') pickExercise(ex => { draft.ex.push(normEx({ e: ex.id, sets: 3, rmin: 0, rmax: 0, rest: 90 })); draw(); });
       else if (a === 'save') {
         if (!draft.n.trim()) return UI.toast('Dai un nome alla routine');
         if (!draft.ex.length) return UI.toast('Aggiungi almeno un esercizio');
@@ -520,6 +526,15 @@
 
   /* ---------- azioni: home ---------- */
   UI.on('pal.tab', el => { P.tab = el.dataset.v === 'profilo' ? 'profilo' : 'allena'; UI.refresh(); });
+  UI.on('pal.progress', () => {
+    const list = [];
+    S().sessions.forEach(s => s.ex.forEach(e => { if (list.indexOf(e.e) < 0) list.push(e.e); }));
+    const rows = list.map(id => ({ id, pr: Calc.exProgress(id) })).filter(x => x.pr).sort((a, b) => b.pr.last.d.localeCompare(a.pr.last.d));
+    const ups = rows.filter(x => x.pr.vsPrev && x.pr.vsPrev.type === 'up').length;
+    const sh = UI.sheet({ title: 'I miei progressi', cls: 'tall',
+      html: (rows.length ? '<p class="hv-sub">Stai migliorando in <b>' + ups + '</b> ' + (ups === 1 ? 'esercizio' : 'esercizi') + ' su ' + rows.length + ' rispetto alla volta precedente. Tocca un esercizio per grafici e cronologia.</p>' + rows.map(x => '<div class="hv-progrow" role="button" tabindex="0" data-ex="' + esc(x.id) + '"><div class="hv-exh">' + circle(x.id) + '<b class="hv-exn">' + esc(Calc.exName(x.id)) + '</b><span class="small mut">' + kgS(x.pr.last.best.w) + ' kg × ' + x.pr.last.best.r + '</span></div>' + (x.pr.vsPrev ? progLine(x.pr.vsPrev) : '<div class="hv-prog same">Prima volta il ' + esc(UI.dateShort(x.pr.last.d)) + ': il confronto arriva dal prossimo allenamento</div>') + '</div>').join('') : '<p class="hv-empty">Finisci un allenamento e qui vedrai i tuoi progressi.</p>') });
+    sh.body.addEventListener('click', e => { const b = e.target.closest('[data-ex]'); if (b && P.exDetail) P.exDetail(b.dataset.ex); });
+  });
   UI.on('pal.startFree', () => start(null, 0));
   UI.on('pal.startRoutine', el => { const f = findDay(el.dataset.p, el.dataset.d); if (f.d) start(f.p.id, f.i); });
   UI.on('pal.routine', el => { const f = findDay(el.dataset.p, el.dataset.d); if (f.d) routineDetail(f.p, f.d); });
@@ -772,11 +787,13 @@
     if (prog && S().activeProgram === prog.id) { const di = prog.days.findIndex(d => d.id === a.day); if (di >= 0) S().nextDayIdx = (di + 1) % prog.days.length; }
     S().activeSession = null; P.min = false; timer = null; flash = 0; drawTimer();
     Store.change(); UI.refresh(); drawNotch();
+    const progs = a.ex.map(e => { const pr = Calc.exProgress(e.e); return pr && pr.vsPrev ? '<div class="small mb8"><b>' + esc(Calc.exName(e.e)) + '</b>' + P.progLine(pr.vsPrev) + '</div>' : ''; }).join('');
     const vol = Calc.sessionVolume(a), nSets = a.ex.reduce((x, e) => x + e.sets.length, 0);
     const sh = UI.sheet({
-      title: 'Allenamento finito', cls: 'small',
+      title: 'Allenamento finito', cls: progs ? 'tall' : 'small',
       html: '<div class="stats"><div class="stat"><b>' + UI.durStr(a.end - a.start) + '</b><span>durata</span></div><div class="stat"><b>' + fmt(vol) + '</b><span>volume kg</span></div><div class="stat"><b>' + nSets + '</b><span>serie</span></div></div>' +
         (prs.length ? '<div class="hl mb8"><b>🏆 Record</b>' + prs.map(r => '<div class="small">' + esc(r.n) + ': ' + fmt(r.w, r.w % 1 ? 1 : 0) + ' kg × ' + r.r + (r.first ? ' (prima volta)' : '') + '</div>').join('') + '</div>' : '<p class="small mut mb8">Nessun nuovo record questa volta: la costanza conta più.</p>') +
+        (progs ? '<div class="sec-t">I tuoi progressi</div>' + progs : '') +
         '<button class="btn wa block" id="fin-send">Manda al partner</button><button class="btn block mt8" id="fin-close">Chiudi</button>'
     });
     sh.body.querySelector('#fin-close').onclick = () => sh.close();

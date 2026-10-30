@@ -381,10 +381,11 @@
     const e = Calc.exById(id); if (!e) return;
     const mine = id.indexOf('x_') === 0;
     const hist = Calc.exerciseHistory(id);
-    const per = hist.map(h => ({ d: h.s.date, maxW: Math.max.apply(null, h.sets.map(x => +x.w)), e1: Math.max.apply(null, h.sets.map(x => Calc.e1rm(x.w, x.r, x.rpe))), vol: h.sets.reduce((a, x) => a + (+x.w) * (+x.r), 0), sets: h.sets }));
+    const per = hist.map(h => ({ d: h.s.date, maxW: Math.max.apply(null, h.sets.map(x => +x.w)), e1: Math.max.apply(null, h.sets.map(x => Calc.e1rm(x.w, x.r, x.rpe))), vol: h.sets.reduce((a, x) => a + (+x.w) * (+x.r), 0), sets: h.sets, bestR: Calc.exSnap(h).best.r }));
+    const prog = Calc.exProgress(id);
     const sh = UI.sheet({ title: e.n, cls: 'tall' });
     let tab = 'sum', metric = 'maxW';
-    const CH = [['maxW', 'Peso massimo'], ['e1', 'Singola ripetizione massima']];
+    const CH = [['maxW', 'Peso massimo'], ['bestR', 'Ripetizioni'], ['vol', 'Volume'], ['e1', 'Singola ripetizione massima']];
     const hasPhoto = () => { const m = P.mediaHtml(id); return m.indexOf('<img') >= 0 && m.indexOf('ex-media art') < 0; }; /* col disegno i muscoli sono già nel riquadro */
     function drawChartBox() {
       const box = sh.body.querySelector('#ed-chart'); if (!box) return;
@@ -398,6 +399,13 @@
     }
     const sec = e.sec && e.sec.length ? e.sec.map(s => D.MUSCLES[s]).filter(Boolean).join(', ') : '–';
     const names = '<p class="hv-sub" style="margin-bottom:4px">Primario: ' + esc(D.MUSCLES[e.mg] || '–') + '</p><p class="hv-sub" style="margin-bottom:4px">Secondario: ' + esc(sec) + '</p><p class="hv-sub">Attrezzo: ' + esc(D.EQUIP[e.eq] || '–') + '</p>';
+    function progCard() {
+      if (!prog || !prog.vsPrev) return '';
+      const c = prog.vsPrev, pc = (x, u) => x === null ? '–' : (x > 0 ? '+' : x < 0 ? '−' : '') + fmt(Math.abs(x), Math.abs(x) % 1 ? 1 : 0) + (u || '');
+      return '<div class="hv-sec"><h2 class="mut">📈 Progressi</h2></div>' + P.progLine(c) +
+        '<div class="hv-fe"><span>Peso</span><b>' + pc(c.dw, '%') + '</b></div><div class="hv-fe"><span>Ripetizioni</span><b>' + pc(c.dr) + '</b></div><div class="hv-fe"><span>Volume</span><b>' + pc(c.dv, '%') + '</b></div><div class="hv-fe"><span>Forza stimata</span><b>' + pc(c.de, '%') + '</b></div>' +
+        (prog.vsFirst ? '<div class="hv-sec"><h2 class="mut">Dall\'inizio</h2></div>' + P.progLine(prog.vsFirst) : '');
+    }
     function draw() {
       let h = UI.seg([['sum', 'Sommario'], ['his', 'Cronologia'], ['ist', 'Istruzioni']], tab, 'noop');
       if (tab === 'sum') {
@@ -406,12 +414,12 @@
         per.forEach(p => { if (bv === null || p.vol > bv) bv = p.vol; });
         const b = Calc.bestOf(id);
         h += P.mediaHtml(id) + '<h2 class="hv-h2">' + esc(e.n) + '</h2><div class="hv-exinfo"><div class="grow">' + names + '</div>' + (hasPhoto() ? BodyMap.svg({ primary: [e.mg], secondary: e.sec || [], size: 44 }) : '') + '</div>' +
-          '<div class="hv-chart" id="ed-chart"></div><div class="hv-chips nowrap">' + CH.map(c => '<button class="chip' + (c[0] === metric ? ' on' : '') + '" data-m="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' +
+          '<div class="hv-chart" id="ed-chart"></div><div class="hv-chips nowrap">' + CH.map(c => '<button class="chip' + (c[0] === metric ? ' on' : '') + '" data-m="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' + progCard() +
           '<div class="hv-sec"><h2 class="mut">' + ic('medal', 22) + ' Record personali</h2></div>' +
           '<div class="hv-fe big"><span>Peso massimo</span><b>' + (b.e1 ? kgS(b.load.w) + ' kg × ' + b.load.r : '-') + '</b></div><div class="hv-fe big"><span>Miglior 1RM</span><b>' + (b.e1 ? fmt(b.e1.v, 1) + ' kg' : '-') + '</b></div><div class="hv-fe big"><span>Miglior volume del set</span><b>' + (bs ? kgS(bs.w) + ' kg × ' + bs.r : '-') + '</b></div><div class="hv-fe big"><span>Miglior volume della sessione</span><b>' + (bv === null ? '-' : fmt(bv) + ' kg') + '</b></div>';
         if (mine) h += '<button class="hv-wide mt12" data-ed="1">Modifica esercizio</button>';
       } else if (tab === 'his') {
-        h += per.length ? per.slice().reverse().map(p => '<div class="hv-hs"><b>' + esc(UI.dateLabel(p.d)) + '</b>' + p.sets.map((s, i) => '<div class="hv-tr"><span>' + (i + 1) + '</span><span>' + kgS(s.w) + ' kg × ' + s.r + (+s.rpe > 0 ? ' @' + s.rpe : '') + '</span><span></span></div>').join('') + '</div>').join('') : '<p class="hv-empty">Nessuna sessione con questo esercizio.</p>';
+        h += per.length ? per.map((p, i) => ({ p, c: i && prog ? Calc.compareSnap(prog.snaps[i], prog.snaps[i - 1]) : null })).reverse().map(({ p, c }) => '<div class="hv-hs"><b>' + esc(UI.dateLabel(p.d)) + '</b>' + (c ? P.progLine(c) : '') + p.sets.map((s, i) => '<div class="hv-tr"><span>' + (i + 1) + '</span><span>' + kgS(s.w) + ' kg × ' + s.r + (+s.rpe > 0 ? ' @' + s.rpe : '') + '</span><span></span></div>').join('') + '</div>').join('') : '<p class="hv-empty">Nessuna sessione con questo esercizio.</p>';
         if (mine) h += '<button class="hv-wide" data-ed="1">Modifica esercizio</button>';
       } else {
         const steps = Array.isArray(e.steps) && e.steps.length ? '<ol class="hv-steps">' + e.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>'

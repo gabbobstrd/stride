@@ -562,3 +562,9 @@ body.timer-on .notch { bottom: calc(var(--tab) + var(--sab) + 82px); }
 body.notch-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 110px); }
 body.notch-on.timer-on main.wrap { padding-bottom: calc(var(--tab) + var(--sab) + 190px); }
 .setrow.hs.ed { grid-template-columns: 34px 1fr 1fr 40px; } .setrow.hs.ed.rg { grid-template-columns: 34px 1fr 1fr 1fr 40px; }
+.hv-prog { font-size: 14px; font-weight: 600; line-height: 1.3; padding: 8px 10px; margin: 2px 0 8px; border-radius: 10px; background: #1C1C1E; color: #8E8E93; }
+.hv-prog small { display: block; font-weight: 500; font-size: 12.5px; color: #8E8E93; margin-top: 2px; }
+.hv-prog.up { color: #34C759; background: rgba(52, 199, 89, .12); }
+.hv-prog.down { color: #FF9F0A; background: rgba(255, 159, 10, .12); }
+.hv-tag { display: table; margin-top: 4px; padding: 2px 8px; border-radius: 7px; background: #2C2C2E; color: #fff; font-size: 12.5px; font-weight: 500; }
+.hv-progrow { border-bottom: 1px solid #2C2C2E; padding-bottom: 4px; }

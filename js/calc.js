@@ -331,6 +331,42 @@
     }
     return { e1, load };
   }
+  /* ---------- progressi di un esercizio ---------- */
+  function exSnap(h) {
+    let best = null, vol = 0, e1 = 0;
+    h.sets.forEach(x => { const w = +x.w, r = +x.r; if (!best || w > best.w || (w === best.w && r > best.r)) best = { w, r }; vol += w * r; e1 = Math.max(e1, e1rm(x.w, x.r, x.rpe)); });
+    return { d: h.s.date, best, vol, e1, n: h.sets.length };
+  }
+  function pctOf(a, b) { return b > 0 ? Math.round((a - b) / b * 1000) / 10 : null; }
+  function signed(x, u) { return (x > 0 ? '+' : '−') + UI.fmt(Math.abs(x), Math.abs(x) % 1 ? 1 : 0) + (u || ''); }
+  /* il giorno di riferimento detto a parole: «alla settimana scorsa (23 ott)», «al 2 ott (28 giorni fa)» */
+  function whenLabel(d, from) {
+    const n = Store.diffDays(from, d), ds = UI.dateShort(d);
+    if (n <= 0) return 'alla sessione di prima';
+    if (n === 1) return 'a ieri (' + ds + ')';
+    if (n >= 6 && n <= 8) return 'alla settimana scorsa (' + ds + ')';
+    return 'al ' + ds + ' (' + n + ' giorni fa)';
+  }
+  /* cur rispetto a ref: differenze misurate e la frase principale. type: up, same, down */
+  function compareSnap(cur, ref) {
+    const dw = pctOf(cur.best.w, ref.best.w), dr = cur.best.r - ref.best.r, dv = pctOf(cur.vol, ref.vol), de = pctOf(cur.e1, ref.e1);
+    const samew = cur.best.w === ref.best.w;
+    let type = 'same', text = 'Stesso risultato';
+    if (cur.best.w > ref.best.w) { type = 'up'; text = dw !== null ? signed(dw, '%') + ' di peso' : 'Hai aggiunto peso'; }
+    else if (samew && dr > 0) { type = 'up'; text = signed(dr) + (dr === 1 ? ' ripetizione' : ' ripetizioni') + ' allo stesso peso'; }
+    else if (dv > 0) { type = 'up'; text = signed(dv, '%') + ' di volume'; }
+    else if (de > 0) { type = 'up'; text = signed(de, '%') + ' di forza stimata'; }
+    else if (cur.best.w < ref.best.w) { type = 'down'; text = dw !== null ? signed(dw, '%') + ' di peso' : 'Meno peso'; }
+    else if (dr < 0) { type = 'down'; text = signed(dr) + (dr === -1 ? ' ripetizione' : ' ripetizioni') + ' allo stesso peso'; }
+    else if (dv < 0) { type = 'down'; text = signed(dv, '%') + ' di volume'; }
+    return { type, text, dw, dr, dv, de, when: whenLabel(ref.d, cur.d), line: UI.fmt(ref.best.w, ref.best.w % 1 ? 1 : 0) + ' kg × ' + ref.best.r + ' → ' + UI.fmt(cur.best.w, cur.best.w % 1 ? 1 : 0) + ' kg × ' + cur.best.r };
+  }
+  function exProgress(eid) {
+    const snaps = exerciseHistory(eid).map(exSnap);
+    if (!snaps.length) return null;
+    const last = snaps[snaps.length - 1], prev = snaps.length > 1 ? snaps[snaps.length - 2] : null;
+    return { snaps, last, vsPrev: prev ? compareSnap(last, prev) : null, vsFirst: snaps.length > 2 ? compareSnap(last, snaps[0]) : null };
+  }
   function records() {
     const ids = new Set();
     S().sessions.forEach(s => s.ex.forEach(e => ids.add(e.e)));
@@ -411,6 +447,6 @@
     age, weightSeries, trendSeries, weightOn, bmr, adaptive, targets, dayTotals, avgTotals, lastDays,
     microReport, lowestMicros, richFoods, trainHours, waterGoal, e1rm, exById, exName, allExercises,
     sortedSessions, doneSets, exerciseHistory, lastPerformance, isLowerBody, progression, sessionVolume, bestOf,
-    records, newRecords, muscleSets, varietySet, labRange, labStatus, latestLab, labName
+    records, newRecords, exSnap, compareSnap, exProgress, muscleSets, varietySet, labRange, labStatus, latestLab, labName
   };
 })();
