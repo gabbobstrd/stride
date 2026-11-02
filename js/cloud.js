@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   const esc = UI.esc;
-  let API = 'https://stride-api.gabriel-martino-cri.workers.dev';
+  let API = 'https://stride-api.chromareview.workers.dev';
   try { const o = localStorage.getItem('stride_api'); if (o && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)) API = o; } catch (e) { /* ignora */ }
   const ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 simboli, niente I O 0 1
   const DAY_MS = 86400000;
